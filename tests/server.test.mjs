@@ -10,7 +10,7 @@ test('authenticated local server: CSRF, roles, conflicts, scene control and patc
   r=await call('api/command',{op:'arm',sceneId:state.show.scenes[0].id,approved:false});assert.equal(r.status,400);
   r=await call('api/command',{op:'arm',sceneId:state.show.scenes[0].id,approved:true});assert.equal(r.status,200);state=r.data;assert.equal(state.engine.output,'simulation');
   r=await call('api/command',{op:'play',sceneId:state.show.scenes[1].id});assert.equal(r.status,200);
-  r=await call('api/command',{op:'preview',clientId:'tab-a'});assert.equal(r.status,200);
+  assert.equal(state.role,'operator');assert.equal((await call('api/command',{op:'adminUnlock',pin:'5433'})).status,200);r=await call('api/command',{op:'preview',clientId:'tab-a'});assert.equal(r.status,200);
   assert.equal((await call('api/command',{op:'preview',clientId:'tab-b'})).status,409);
   await call('api/command',{op:'cancelPreview'});
   r=await call('api/command',{op:'addFixtures',revision:state.show.revision,quantity:1,profileId:state.show.profiles[0].id,name:'New Eve',group:'Back wall'});assert.equal(r.status,200);state=r.data;assert.equal(state.show.fixtures.length,33);assert.equal(state.show.fixtures.at(-1).address,1);
@@ -20,9 +20,10 @@ test('authenticated local server: CSRF, roles, conflicts, scene control and patc
   assert.equal((await call('api/command',{op:'updateFixture',revision:state.show.revision,id:original.id,name:original.name,address:3000000000})).status,400);
   await call('api/command',{op:'arm',sceneId:state.show.scenes[0].id,approved:true});
   await call('api/command',{op:'preview',clientId:'tab-a'});const added=state.show.fixtures.at(-1);await call('api/command',{op:'adjust',clientId:'tab-a',fixtureId:added.id,offset:0,value:150});
-  r=await call('api/command',{op:'saveScene',clientId:'tab-a',revision:state.show.revision,id:state.show.scenes[0].id,name:'Saved preview',fadeMs:1000,mask:state.show.scenes[0].mask,fromPreview:true});assert.equal(r.status,200);state=r.data;assert.equal(state.show.scenes[0].steps[0].values[0],150);assert.equal(state.show.scenes[0].mask[0],true);assert.equal(state.engine.preview,false);
+  r=await call('api/command',{op:'saveScene',clientId:'tab-a',revision:state.show.revision,id:state.show.scenes[0].id,name:'Saved preview',fadeMs:1000,mask:state.show.scenes[0].mask.map((v,i)=>i===0||v),values:app.engine.frame.map((v,i)=>app.engine.policies[i].kind==='protected'?state.show.scenes[0].steps[0].values[i]:v)});assert.equal(r.status,200,JSON.stringify(r.data));state=r.data;assert.equal(state.show.scenes[0].steps[0].values[0],150);assert.equal(state.show.scenes[0].mask[0],true);assert.equal(state.engine.preview,false);
   await call('api/command',{op:'setUser',name:'operator',password:'a good strong passphrase',role:'operator'});await call('api/login',{name:'operator',password:'a good strong passphrase'}).then(r=>{assert.equal(r.status,200);csrf=r.data.csrf;});
   assert.equal((await call('api/command',{op:'simulate',enabled:true})).status,403);assert.equal((await call('api/export')).status,403);assert.equal((await call('api/command',{op:'hold'})).status,200);
   assert.equal((await call('api/command',{op:'blackout'})).status,200);
  }finally{await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
+

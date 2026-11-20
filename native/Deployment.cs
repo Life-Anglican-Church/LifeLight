@@ -1,6 +1,6 @@
 using System;using System.IO;using System.IO.Compression;using System.Net;using System.Diagnostics;using System.Text;using System.Threading;using System.Security.Cryptography;using System.Reflection;using System.Web.Script.Serialization;using Microsoft.Win32;
 static class Deployment{
- public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.1.0";
+ public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.2.0";
  public static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","LifeAC-Lighting");
  public static readonly string Data=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"LifeAC-Lighting");
  public static readonly JavaScriptSerializer Json=new JavaScriptSerializer{MaxJsonLength=4000000};
@@ -19,7 +19,7 @@ static class Deployment{
    status("Extracting LifeAC Lighting "+version+"…");long total=0;using(var zip=new ZipArchive(payload,ZipArchiveMode.Read,true)){
     if(zip.Entries.Count>5000)throw new InvalidDataException("Too many files");foreach(var e in zip.Entries){string rel=e.FullName.Replace('/','\\');if(rel.StartsWith("LifeAC-Lighting\\",StringComparison.Ordinal))rel=rel.Substring(16);if(rel.Length==0)continue;
      if(Path.IsPathRooted(rel)||rel.IndexOf(':')>=0||(e.ExternalAttributes&0x400)!=0||((e.ExternalAttributes>>16)&0xF000)==0xA000)throw new InvalidDataException("Unsafe archive entry");string dest=Path.GetFullPath(Path.Combine(stage,rel));if(!Within(dest,stage))throw new InvalidDataException("Archive path outside installation");
-     total+=e.Length;if(total>600000000||e.Length>200000000)throw new InvalidDataException("Archive size limit");if(rel.EndsWith("\\")){Directory.CreateDirectory(dest);continue;}Directory.CreateDirectory(Path.GetDirectoryName(dest));using(var input=e.Open())using(var output=new FileStream(dest,FileMode.CreateNew)){byte[] buffer=new byte[65536];long read=0;int n;while((n=input.Read(buffer,0,buffer.Length))>0){read+=n;if(read>e.Length)throw new InvalidDataException("Archive length mismatch");output.Write(buffer,0,n);}if(read!=e.Length)throw new InvalidDataException("Incomplete file");}
+     total+=e.Length;if(total>600000000||e.Length>300000000)throw new InvalidDataException("Archive size limit");if(rel.EndsWith("\\")){Directory.CreateDirectory(dest);continue;}Directory.CreateDirectory(Path.GetDirectoryName(dest));using(var input=e.Open())using(var output=new FileStream(dest,FileMode.CreateNew)){byte[] buffer=new byte[65536];long read=0;int n;while((n=input.Read(buffer,0,buffer.Length))>0){read+=n;if(read>e.Length)throw new InvalidDataException("Archive length mismatch");output.Write(buffer,0,n);}if(read!=e.Length)throw new InvalidDataException("Incomplete file");}
     }
    }
    foreach(string required in new[]{"LifeAC Lighting.exe","LifeAC Lighting Updater.exe","runtime\\node.exe","src\\server.mjs","web\\index.html","bin\\LifeAC-FrameWorker.exe"})if(!File.Exists(Path.Combine(stage,required)))throw new InvalidDataException("Incomplete application package");
@@ -52,3 +52,4 @@ static class Deployment{
  }
  static void CheckTree(string dir){if((File.GetAttributes(dir)&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException("Uninstall found a redirected folder; manual review required");foreach(string child in Directory.GetDirectories(dir))CheckTree(child);}
 }
+

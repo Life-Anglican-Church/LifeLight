@@ -12,3 +12,5 @@ test-artifacts/
 update-access*
 node_modules/
 .cache/
+
+desktop-runtime/

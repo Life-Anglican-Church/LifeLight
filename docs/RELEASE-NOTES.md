@@ -1,16 +1,17 @@
-# LifeAC Lighting 0.1.0
+# LifeAC Lighting 0.2.0
 
-First onsite live-control preview for the church projector PC.
+- Dedicated Windows desktop window, with retained host/USB output across pages and window hiding.
+- Sunday Services and General folders; move scenes and create folders. Default takeover: Sunday Services / Pre-Service.
+- Volunteer by default; Admin unlock PIN 5433, with clear mode indicator.
+- Full stage photo layout, draggable fixture pins and photo scene builder.
+- Timed scene steps, repeat and selectable brightness, colour and movement effects. Eight imported sequences recovered; 68 playable scenes, three empty.
+- MIDI learning per scene, Note/CC/Program support, exact-value matching and remembered source with automatic reconnection.
+- Automatic HTTPS LAN access and editable user accounts/permissions.
+- Removed Hold and Blackout controls and Imported Lights fixture groups.
+- Backups and existing user data preserved through migration.
 
-- LifeAC Welcome branding, loading screen and church artwork.
-- Original 32-fixture patch and 71 named scenes; 60 static scenes enabled, with unsupported/empty sequences preserved for review.
-- Persistent scene transitions, paired 16-bit movement, Hold, Blackout and explicit live preview/cancel.
-- Add/repatch fixtures, create/import profiles, edit/duplicate scenes, automatic backups and diagnostics.
-- Authenticated HTTPS LAN setup and host-side MIDI scene mappings.
-- Per-user Windows installer and GitHub updater, preserving show data and existing USB drivers.
+Install **LifeAC-Lighting-Setup-0.2.0.exe**, or use the **new LifeAC-Lighting-Updater.exe** from this release. Close the previous host from its tray menu first. The 0.1 updater cannot extract the larger desktop runtime; use this new installer/updater for this upgrade.
 
-Download **LifeAC-Lighting-Setup-0.1.0.exe** for first installation. Use **LifeAC-Lighting-Updater.exe** for subsequent updates; stop the lighting host before updating. The read-access credential requested by the owner is embedded in both utilities; the publishing credential is not. The token is not a substitute for Windows account security and can be recovered from those utilities.
+Standalone controller memory read/write is still unavailable through Chromateq's published USB SDK. Installing another SDK does not add that API. Imported standalone assignments are shown as project data, never as device readback.
 
-Actual standalone-device scene-memory read/write is not supported by the available SDK. The Standalone screen manages an imported PC plan only. Eleven imported scenes and the two previously dark moving heads need commissioning. The new application pipeline has been tested in simulation; complete the supplied onsite checks before service use.
-
-The app sends no output on startup. Take control explicitly during a suitable maintenance window. Existing show files, Welcome software and drivers are not replaced.
+Fourteen automated core/security/parser/TLS tests and the full simulated desktop/mobile editing flow pass. No native desktop app or lighting output was run on the disconnected laptop. Physical USB, MIDI and LAN access from another device require onsite verification. No existing drivers were replaced.
