@@ -1,6 +1,6 @@
 export const DEFAULT_FOLDER='Sunday Services';
 export function migrateShow(show){
- if(show.layoutVersion===2)return false;
+ let changed=false;for(const f of show.fixtures){if(f.model==null){f.model=f.name;changed=true;}}if(show.layoutVersion===2)return changed;
  show.folders=[DEFAULT_FOLDER,'General'];let sunday=new Set();
  const names=['pre-service','full stage','centre focus','lights off'];
  for(const name of names){const s=show.scenes.find(s=>s.name.trim().toLowerCase()===name);if(s)sunday.add(s.id);}

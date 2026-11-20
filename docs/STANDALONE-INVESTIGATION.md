@@ -21,3 +21,14 @@ The exact locally verified 2023 SDK SHA-256 is 2c45136f7833f4096585ee319037d29ce
 Next evidence required: a real 0x21 configuration response from the church controller. Use that to validate model-dependent layout and scene counts, then implement read-only scene/step inventory and a complete recoverable backup. Only after repeatable readback and offline round-trip checks should a full write transaction be exposed, with backup, verification, failure recovery and explicit commit. Existing device memory must not be treated as blank merely because a read fails. The first reader is not a full backup and does not make writing safe yet.
 
 Research scripts in the workspace can reproduce RCC extraction and static PE/import/disassembly analysis. Proprietary ProDMX/SDK binaries are kept outside the source repository and are not redistributed with the reader.
+
+## Hardware result — 20 November 2026
+Both supplied read reports succeeded against one interface, firmware 2.4.2.3. Configuration command 0x21 returned 128 bytes, SHA-256 1617f80601e6e294a49bc4095827a017eb9de4e6ba43bd3e4446e9093af803a9. This proves the private configuration-read path on the actual hardware. It is not a complete memory backup or a decoded scene inventory. No write or erase operation was attempted. The next step is decoding the configuration and reading legacy scene headers/steps before implementing verified writes.
+
+## Expanded scene reader — unpublished
+
+`tools/standalone-reader/StandaloneReaderWorker.cs` now requests legacy scene headers (0x51), triggers (0x61), and per-universe steps (0x71), preserving raw replies alongside decoded channel values and 40 ms fade/hold ticks. It supports only the traced model layouts 6, 7, 9, 10 and 13, pins the SDK and firmware, bounds counts and payloads, checks packet sequence/response identity, and rereads configuration to detect changes. A partial read is never marked complete. No write, erase or DMX-output operation is enabled.
+
+Compiled x86 worker and Windows GUI successfully. Worker `--self-test` passed an in-memory two-scene inventory plus rejection checks for wrong scene, wrong packet sequence, truncated channel data, changed configuration and a write opcode. `--verify-only` passed against the pinned SDK without loading it or accessing USB. These are offline checks, not proof of hardware scene reading.
+
+Standalone writing remains unfinished. Tracing identified header, trigger, step and configuration write commands, but the full device-wide tables, flash allocation/commit sequence and restoration procedure remain unverified. Existing project files and the 128-byte configuration reports do not supply that missing backup. Do not label the existing v0.3.0 build as a completed standalone reader/writer or publish it under that claim. A successful expanded on-device read is the next required evidence; no native hardware check was run on the laptop.

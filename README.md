@@ -1,8 +1,8 @@
-# LifeAC Lighting 0.2.1
+# LifeAC Lighting 0.3.0
 
-Install LifeAC-Lighting-Setup-0.2.1.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
+Install LifeAC-Lighting-Setup-0.3.0.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
 
-Open the LifeAC Lighting shortcut. It now opens a dedicated Windows application window. Closing its window leaves lighting running in the tray; the tray menu reopens the window or stops the host. Page changes do not close the USB connection. Launching alone sends no DMX output.
+Open the LifeAC Lighting shortcut. It now opens a dedicated Windows application window. USB, timing and MIDI run in an independent Node host supervised by the tray launcher. The Electron window is a client. Closing its window leaves lighting running in the tray; the tray menu reopens the window or stops the host. Page changes do not close the USB connection. On a host PC, automatic USB acquisition is enabled: when one verified controller is detected, Full Stage is applied by default. Configure or disable this under Settings. A deliberate Release suspends automatic reacquisition until the next takeover or restart.
 
 The app starts in Volunteer mode. Unlock Admin using PIN 5433. You can change the PIN in Settings. Remote accounts have separate View, Volunteer or Admin permissions; Admin accounts also unlock editing with the PIN.
 
@@ -10,7 +10,7 @@ Sunday Services is the default scene folder, with Pre-Service, Full Stage, Centr
 
 In Stage, select an unplaced light and click its position in the supplied photo. Drag pins to adjust. Pins show configured addresses, not discovered identities. DMX cannot discover ordinary fixture identities. All 32 configured lights are included; the Imported Lights grouping is removed.
 
-Edit a scene to choose a light in the photo or dropdown, change brightness/colour/position, and add timed steps. Each step has fade and hold times; Repeat loops the sequence. Effects include brightness pulse, colour cycle and moving-head sweep, with light selection, cycle time and amount. Draft edits send nothing until Preview is selected. Restore/Cancel returns to the previous commanded scene; Save keeps the PC show. Imported eight multi-step sequences are recovered with inherited channel identifiers; 68 scenes are playable and three empty scenes remain editable.
+Edit a scene to choose a light in the photo or dropdown, change brightness/colour/position, and add timed steps. Each step has fade and hold times; Repeat loops the sequence. Effects include brightness pulse, colour cycle and moving-head sweep, with light selection, cycle time and amount. Editing selects the scene and starts live preview automatically. Faders and step selection update the lights. Cancel restores the selected scene; Save retains the changes. Imported eight multi-step sequences are recovered with inherited channel identifiers; 68 scenes are playable and three empty scenes remain editable.
 
 MIDI: choose the input source once in Settings. The host remembers its NAME and reconnects automatically. Under each scene, use MIDI / Learn next input or enter Note, Control Change or Program Change parameters. Channel numbers are 1-16; keys/program numbers are 0-127. Optional exact value matches controller buttons reliably. Mapping conflicts are reported. MIDI remains in the host, independent of which page is shown.
 
@@ -23,3 +23,7 @@ Standalone device memory reading/writing remains unavailable. Both the tested 20
 The app reuses the verified private USB runtime or downloads the official archive on first takeover. No existing USB driver, projector, Welcome installation or ProDMX project is replaced. Test the new build onsite before relying on its output; the two previously dark moving heads still need physical verification.
 
 Source: src/, web/, native/, desktop/. Build native helpers with build.cmd. Desktop runtime is official Electron 45.3.0 Windows x64, verified against its release SHASUMS256.txt, extracted into desktop-runtime/. Existing Node runtime remains bundled for diagnostics/compatibility. Installer packaging: scripts/build-release.ps1; requires the owner-provided read credential outside source. Publishing credentials are never bundled.
+
+Use the tray menu “Connect to another lighting PC…” on a remote computer and enter the HTTPS address shown in host Settings. It then runs only a client, with no local USB or MIDI listener. Sign in using a host account. Compare the host certificate fingerprint when prompted. “Use this PC as lighting host” switches back. Both PCs retain separate shows; keep the standby show current using export/import before relying on USB switching. This version does not control the physical USB switch.
+
+Logs are automatic in %LOCALAPPDATA%\LifeAC-Lighting\logs\lighting.jsonl (four rotating files, about 8 MB total). Settings > Export diagnostics includes retained event logs, outgoing-frame counters, native-worker errors and MIDI events/mappings. The tray also opens the data/log folder. Credentials, email addresses and known Windows user/computer names are removed from event logs. No automatic uploads.

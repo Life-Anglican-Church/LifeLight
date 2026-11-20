@@ -1,2 +1,2 @@
-{"name":"lifeac-lighting","version":"0.2.1","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","import":"node src/import-cli.mjs"},"engines":{"node":">=22"}}
+{"name":"lifeac-lighting","version":"0.3.0","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","import":"node src/import-cli.mjs"},"engines":{"node":">=22"}}
 

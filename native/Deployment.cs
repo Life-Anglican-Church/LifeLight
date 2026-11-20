@@ -1,6 +1,6 @@
 using System;using System.IO;using System.IO.Compression;using System.Net;using System.Diagnostics;using System.Text;using System.Threading;using System.Security.Cryptography;using System.Reflection;using System.Web.Script.Serialization;using Microsoft.Win32;
 static class Deployment{
- public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.2.1";
+ public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.3.0";
  public static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","LifeAC-Lighting");
  public static readonly string Data=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"LifeAC-Lighting");
  public static readonly JavaScriptSerializer Json=new JavaScriptSerializer{MaxJsonLength=4000000};

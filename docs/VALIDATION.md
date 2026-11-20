@@ -1,3 +1,9 @@
+# Validation — 20 November 2026, v0.3.0
+
+18 engine/server/security tests pass, including two competing sessions, explicit preview takeover, stale edit rejection, preview expiry, host-side MIDI triggering with no clients, simulated USB appearance/recovery, model preservation, show export/import round trip, redacted persistent logs and rotation. Native helpers and tray launcher compile. Headless Edge checks a 12-second page change, automatic live faders, scene saves and desktop/mobile layouts. The real Electron client renders the four default scenes, exits, and leaves its independent simulation host producing frames. Installer payload and manifest hashes are checked without executing the installer. No native USB/MIDI was opened on this laptop. Physical controller stability, actual MIDI input and two-PC USB switching still require on-site validation. Both user-supplied read reports successfully returned the same 128-byte standalone configuration; full scene backup/writes remain unfinished.
+
+## Earlier validation history
+
 # Validation — 20 November 2026, v0.2.0
 
 14 tests pass: project import (32 fixtures, 7 profiles, 71 scenes, 68 playable), inherited multi-step IDs, folder migration, timed fades/holds/loop, non-accumulating effects, 16-bit movement, protected controls, interrupted fades, preview restoration, output failure/no automatic reconnect, patch validation and atomic backups, authenticated HTTP/CSRF/role/conflict checks, MIDI matching, compiled strict frame parser and private TLS certificate use without trust installation.
