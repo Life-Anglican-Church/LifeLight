@@ -7,3 +7,5 @@ Headless Edge simulation flow passes: four default scene tiles, default connecti
 C# launcher/helpers compile. Electron official Windows runtime SHA-256 matches official release sums. Packaging and embedded payload are checked without running the installer. The dedicated desktop window itself, real MIDI devices, LAN access from another PC and physical USB output have not been exercised on this disconnected laptop.
 
 The standalone API was rechecked against current official USB headers, SDK page and June 2026 UDP protocol. No USB scene-memory read/write entry point is published. This requirement remains blocked; the interface does not pretend to write memory.
+
+0.2.1 hotfix: the REAL Electron runtime now has an invisible-window regression that renders all four scene buttons and shuts down via authenticated Windows named pipe. The 0.2.0 tray-only startup failure was reproduced first. No native USB/MIDI access occurs in this test. Fourteen core tests and the browser flow pass again.

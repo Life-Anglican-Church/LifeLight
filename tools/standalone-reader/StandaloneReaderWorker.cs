@@ -1,0 +1,44 @@
+// Experimental, read-only interoperability probe. Never run against hardware in
+// automated tests. Private entry points are pinned to one verified vendor DLL.
+using System;using System.IO;using System.Linq;using System.Diagnostics;using System.Collections.Generic;using System.Runtime.InteropServices;using System.Security.Cryptography;using System.Web.Script.Serialization;
+static class StandaloneReaderWorker {
+ const string SdkHash="2c45136f7833f4096585ee319037d29cef6e91e5c0146e4d9c4410bcd1219b1b",UsbHash="00caca07869b19d10b370552ac7cc2f6f2ee246fc15db11650f6cd3f4ef9b666";
+ static readonly JavaScriptSerializer Json=new JavaScriptSerializer();
+ [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr LoadLibraryEx(string path,IntPtr file,uint flags);
+ [DllImport("kernel32.dll",CharSet=CharSet.Ansi,ExactSpelling=true)]static extern IntPtr GetProcAddress(IntPtr dll,string name);
+ [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr Factory();
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)]delegate int Count(IntPtr self);
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)][return:MarshalAs(UnmanagedType.I1)]delegate bool Open(IntPtr self,int id,int config,IntPtr key,int size);
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)][return:MarshalAs(UnmanagedType.I1)]delegate bool Firmware(IntPtr self,int id,IntPtr bytes);
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)]delegate void Close(IntPtr self);
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)]delegate void Pause(IntPtr self,IntPtr target);
+ [UnmanagedFunctionPointer(CallingConvention.ThisCall)][return:MarshalAs(UnmanagedType.I1)]delegate bool ReadCommand(IntPtr self,IntPtr device,int command,int group,int initialise);
+ static T Bind<T>(IntPtr dll,string name)where T:class{var p=GetProcAddress(dll,name);if(p==IntPtr.Zero)throw new InvalidOperationException("Required SDK export unavailable");return Marshal.GetDelegateForFunctionPointer(p,typeof(T))as T;}
+ static IntPtr At(IntPtr dll,int rva){return new IntPtr(dll.ToInt64()+rva);}
+ static T Private<T>(IntPtr dll,int rva)where T:class{return Marshal.GetDelegateForFunctionPointer(At(dll,rva),typeof(T))as T;}
+ static string Hash(byte[] bytes){using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();}
+ static int Offset(byte[] b,int rva){int pe=BitConverter.ToInt32(b,60),count=BitConverter.ToUInt16(b,pe+6),table=pe+24+BitConverter.ToUInt16(b,pe+20);for(int i=0;i<count;i++){int p=table+i*40,start=BitConverter.ToInt32(b,p+12),size=BitConverter.ToInt32(b,p+16);if(rva>=start&&rva<start+size)return BitConverter.ToInt32(b,p+20)+rva-start;}throw new InvalidDataException("Private entry outside image sections");}
+ static void Verify(string file){var b=File.ReadAllBytes(file);if(Hash(b)!=SdkHash)throw new InvalidDataException("Unsupported SDK fingerprint; no device opened");foreach(var item in new[]{new{rva=0x3f6dd0,hex="5557565389cb83ec2c807c244c008b6c"},new{rva=0x3f23c0,hex="5557565389cb83ec2c8b81680900008b"},new{rva=0x3f3120,hex="5557565389ce83ec2c8b81680900008b"}}){int offset=Offset(b,item.rva);var actual=BitConverter.ToString(b,offset,16).Replace("-","").ToLowerInvariant();if(actual!=item.hex)throw new InvalidDataException("Private entry signature mismatch");}}
+ static string Prepare(){string local=Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),folder=Path.Combine(local,"LifeAC-Lighting","vendor"),trial=Path.Combine(local,"LifeAC-DMX-Trial","vendor-2023");Directory.CreateDirectory(folder);foreach(var item in new[]{new{name="DevKit.dll",hash=SdkHash},new{name="libusb0.dll",hash=UsbHash}}){string dest=Path.Combine(folder,item.name);if(!File.Exists(dest)||Hash(File.ReadAllBytes(dest))!=item.hash){string old=Path.Combine(trial,item.name);if(!File.Exists(old)||Hash(File.ReadAllBytes(old))!=item.hash)throw new InvalidOperationException("The verified USB runtime is missing. Use Lighting's connection setup first.");File.Copy(old,dest,true);}}Verify(Path.Combine(folder,"DevKit.dll"));return folder;}
+ static int Main(string[] args){var report=new Dictionary<string,object>{{"schema",1},{"tool","LifeAC standalone read probe 0.1"},{"at",DateTime.UtcNow.ToString("o")},{"experimental",true},{"completeMemoryBackup",false},{"memoryWritesEnabled",false},{"dmxFramesSent",0},{"sdkSha256",SdkHash},{"expectedUsb",new{vid="0483",pid="A1DF"}},{"operation","Read standalone configuration: legacy group 0x50 / opcode 0x21, traced from supplied ProDMX"}};IntPtr self=IntPtr.Zero;Close close=null;
+ try{
+  if(args.Length==2&&args[0]=="--verify-only"){Verify(args[1]);Console.WriteLine("Verified fingerprint and all three private entry signatures without loading the DLL or accessing USB.");return 0;}
+  if(IntPtr.Size!=4)throw new PlatformNotSupportedException("The probe must run as x86");foreach(string process in new[]{"Pro2","ProDMX","LifeAC Lighting","LifeAC-Diagnostics","LifeAC-Sample"})if(Process.GetProcessesByName(process).Length>0)throw new InvalidOperationException("Close Lighting, ProDMX and previous lighting tools before reading.");
+  string folder=Prepare();IntPtr dll=LoadLibraryEx(Path.Combine(folder,"DevKit.dll"),IntPtr.Zero,0x100|0x800);if(dll==IntPtr.Zero)throw new InvalidOperationException("USB runtime could not load");
+  self=Bind<Factory>(dll,"createDevKitClass")();if(self==IntPtr.Zero)throw new InvalidOperationException("SDK factory failed");close=Bind<Close>(dll,"_ZN6DevKit15closeAllDevicesEv");
+  int count=Bind<Count>(dll,"_ZN6DevKit21getNumberOfUsbDevicesEv")(self);report["interfaceCount"]=count;if(count!=1)throw new InvalidOperationException("Expected one USB interface; found "+count);
+  // NoDmx=0 is declared in the supplied SDK header. No initDevices or live-frame
+  // method is called. Maintenance access may pause standalone playback.
+  if(!Bind<Open>(dll,"_ZN6DevKit13openUsbDeviceEi13cqInOutConfigPhi")(self,0,0,IntPtr.Zero,0))throw new InvalidOperationException("Maintenance connection rejected");report["maintenanceOpened"]=true;
+  IntPtr fw=Marshal.AllocHGlobal(4);try{Marshal.Copy(new byte[4],0,fw,4);if(!Bind<Firmware>(dll,"_ZN6DevKit19readFirmwareVersionEiR17cqFirmwareVersion")(self,0,fw))throw new InvalidOperationException("Firmware read rejected");var version=new byte[4];Marshal.Copy(fw,version,0,4);report["firmware"]=String.Join(".",version.Select(x=>x.ToString()).ToArray());if(!version.SequenceEqual(new byte[]{2,4,2,3}))throw new InvalidOperationException("Unexpected firmware; experimental configuration read was not attempted");}finally{Marshal.FreeHGlobal(fw);}
+  IntPtr list=Marshal.ReadIntPtr(At(dll,0xd8bba0));if(list==IntPtr.Zero)throw new InvalidOperationException("Device list missing");int first=Marshal.ReadInt32(list,8),last=Marshal.ReadInt32(list,12);if(first<0||first>1024||last-first!=1)throw new InvalidOperationException("Unexpected device list layout");IntPtr device=Marshal.ReadIntPtr(list,16+first*4);if(device==IntPtr.Zero)throw new InvalidOperationException("Device handle missing");
+  IntPtr core=At(dll,0xd8b240),flag=At(dll,0xd8af24);var pause=Private<Pause>(dll,0x3f23c0);var resume=Private<Pause>(dll,0x3f3120);var read=Private<ReadCommand>(dll,0x3f6dd0);bool paused=false;
+  try{Marshal.WriteByte(flag,1);pause(core,IntPtr.Zero);paused=true;if(!read(core,device,0x21,0x50,1))throw new InvalidOperationException("The controller rejected the standalone configuration read; no fallback or write was attempted");
+   var header=new byte[26];Marshal.Copy(IntPtr.Add(core,0x11a4),header,0,header.Length);if(!header.Take(8).SequenceEqual(new byte[]{0x55,0xaa,0x55,0x11,0,0x55,0xaa,0xff})||header[13]!=0x11||header[14]!=0x51||header[20]!=0x21)throw new InvalidDataException("Standalone response did not match the expected legacy read reply");int length=header[8]|header[9]<<8;if(length<1||length>512)throw new InvalidDataException("Unexpected standalone reply length; configuration bytes were not exported");var payload=new byte[length];Marshal.Copy(IntPtr.Add(core,0x11be),payload,0,length);report["configurationReadAccepted"]=true;report["configurationBytes"]=length;report["configurationBase64"]=Convert.ToBase64String(payload);report["configurationSha256"]=Hash(payload);report["interpretation"]="Opaque device configuration, not a decoded scene list or full memory backup. Raw device configuration is private; it is not uploaded automatically.";
+  }finally{if(paused)resume(core,IntPtr.Zero);Marshal.WriteByte(flag,0);}
+  report["ok"]=true;
+ }catch(Exception error){report["ok"]=false;report["error"]=error is InvalidOperationException||error is InvalidDataException?error.Message:error.GetType().Name;}
+ finally{if(close!=null&&self!=IntPtr.Zero)try{close(self);report["interfaceClosed"]=true;}catch{report["interfaceClosed"]=false;}Console.WriteLine(Json.Serialize(report));}
+ return report.ContainsKey("ok")&&(bool)report["ok"]?0:1;
+ }
+}
