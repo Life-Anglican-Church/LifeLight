@@ -1,17 +1,9 @@
-# LifeAC Lighting 0.2.0
+# LifeAC Lighting 0.2.1 — desktop startup fix
 
-- Dedicated Windows desktop window, with retained host/USB output across pages and window hiding.
-- Sunday Services and General folders; move scenes and create folders. Default takeover: Sunday Services / Pre-Service.
-- Volunteer by default; Admin unlock PIN 5433, with clear mode indicator.
-- Full stage photo layout, draggable fixture pins and photo scene builder.
-- Timed scene steps, repeat and selectable brightness, colour and movement effects. Eight imported sequences recovered; 68 playable scenes, three empty.
-- MIDI learning per scene, Note/CC/Program support, exact-value matching and remembered source with automatic reconnection.
-- Automatic HTTPS LAN access and editable user accounts/permissions.
-- Removed Hold and Blackout controls and Imported Lights fixture groups.
-- Backups and existing user data preserved through migration.
+Fixes the tray-only startup failure in 0.2.0. Electron readiness is now handled after entry-module evaluation, and tray commands use an authenticated Windows named pipe instead of unreliable GUI stdin. The window is created before backend preparation. Shutdown closes event streams and connections cleanly, avoiding a hidden process that blocks updates. Startup errors are written to the local startup log with bootstrap secrets redacted.
 
-Install **LifeAC-Lighting-Setup-0.2.0.exe**, or use the **new LifeAC-Lighting-Updater.exe** from this release. Close the previous host from its tray menu first. The 0.1 updater cannot extract the larger desktop runtime; use this new installer/updater for this upgrade.
+The regression test runs the real Electron runtime in simulation, renders all four Sunday Services scene buttons in an invisible window, then shuts down through the named pipe. No USB or native MIDI access occurs in this test. Core, parser, authentication, TLS and browser UI checks also pass.
 
-Standalone controller memory read/write is still unavailable through Chromateq's published USB SDK. Installing another SDK does not add that API. Imported standalone assignments are shown as project data, never as device readback.
+Close the old Lighting host using its tray menu, then run the updater from this release. Existing shows and backups are preserved.
 
-Fourteen automated core/security/parser/TLS tests and the full simulated desktop/mobile editing flow pass. No native desktop app or lighting output was run on the disconnected laptop. Physical USB, MIDI and LAN access from another device require onsite verification. No existing drivers were replaced.
+Standalone memory work is still in progress. The supplied ProDMX installer has now been statically unpacked, and its actual memory-read, memory-write and transport routines have been located. This hotfix does not enable unverified device-memory commands.

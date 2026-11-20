@@ -1,6 +1,6 @@
-# LifeAC Lighting 0.2.0
+# LifeAC Lighting 0.2.1
 
-Install LifeAC-Lighting-Setup-0.2.0.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
+Install LifeAC-Lighting-Setup-0.2.1.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
 
 Open the LifeAC Lighting shortcut. It now opens a dedicated Windows application window. Closing its window leaves lighting running in the tray; the tray menu reopens the window or stops the host. Page changes do not close the USB connection. Launching alone sends no DMX output.
 
