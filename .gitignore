@@ -11,3 +11,4 @@ test-artifacts/
 *.secret
 update-access*
 node_modules/
+.cache/
