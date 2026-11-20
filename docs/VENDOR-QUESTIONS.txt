@@ -1,0 +1,7 @@
+For Chromateq support, if the user chooses to contact them:
+
+CQSA 512, live firmware 2.4.2.3; USB VID 0483/PID A1DF; existing usbdmx driver 1.2.6.0; 2023 SDK working for live output. We need a supported API/workflow to enumerate/read existing standalone scene contents and button/page mappings, back up internal memory, and write selected scene/configuration changes while preserving other contents. Neither the 2023 header nor the November 2026 C API documents those operations.
+
+Is another licensed SDK available? Can standalone memory be exported with a documented file format? Does removable storage contain a complete recoverable configuration or only part of it? What model/firmware restrictions, backup/recovery guarantees and redistribution/commercial terms apply? Does the November 2026 WinUSB SDK support this exact older driver/firmware installation without a driver change?
+
+No message has been sent by the agent. No licence has been purchased or implied.

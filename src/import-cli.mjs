@@ -1,0 +1,1 @@
+import fs from 'node:fs';import {importShow} from './import.mjs';const s=importShow(fs.readFileSync(process.argv[2]));fs.writeFileSync(process.argv[3],JSON.stringify(s));console.log(`${s.fixtures.length} fixtures; ${s.scenes.length} scenes; ${s.migration.supported} supported static scenes`);

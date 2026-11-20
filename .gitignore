@@ -1,0 +1,13 @@
+runtime/
+bin/
+dist/
+test-artifacts/
+*.exe
+*.zip
+*.pfx
+*.cer
+*.dpapi
+*.key
+*.secret
+update-access*
+node_modules/

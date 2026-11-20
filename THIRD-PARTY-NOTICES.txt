@@ -1,0 +1,5 @@
+Node.js 24.22.3 is bundled from the official nodejs.org Windows x64 distribution. Its complete licence/third-party notices are in runtime/LICENSE. Archive SHA-256 was checked against https://nodejs.org/dist/v24.22.3/SHASUMS256.txt.
+
+Chromateq SDK/USB libraries and drivers are NOT bundled. The user's locally prepared copy is reused or the official 2023 archive is downloaded and fingerprint checked. Commercial use/redistribution terms must be confirmed with Chromateq; free/open UDP documentation does not establish USB DLL licensing. The implementation does not change firmware, keys, driver installation or scene memory.
+
+Windows/.NET system libraries, Edge/Chrome and system fonts are not redistributed. LifeAC artwork is supplied church branding, not a third-party stock logo. Raleway/The Hand font files are not bundled; system fallbacks are used where needed.

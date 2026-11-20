@@ -1,0 +1,9 @@
+import fs from 'node:fs';import path from 'node:path';import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+export class Auth{
+ constructor(dir){this.file=path.join(dir,'users.json');this.users=fs.existsSync(this.file)?JSON.parse(fs.readFileSync(this.file,'utf8')):[];this.sessions=new Map();this.attempts=new Map();this.bootstrap=randomBytes(32).toString('hex');}
+ save(){const tmp=this.file+'.new';fs.writeFileSync(tmp,JSON.stringify(this.users),{mode:0o600});fs.renameSync(tmp,this.file);}
+ setUser(name,password,role){if(!/^[a-zA-Z0-9._-]{2,40}$/.test(name)||typeof password!=='string'||password.length<12||password.length>200||!['admin','operator'].includes(role))throw Error('Use a 2–40 character username and password of at least 12 characters');const salt=randomBytes(16).toString('hex'),digest=scryptSync(password,salt,32).toString('hex');const user={name,role,salt,digest};this.users=this.users.filter(u=>u.name!==name).concat(user);this.save();for(const [key,s]of this.sessions)if(s.name===name)this.sessions.delete(key);}
+ login(name,password,ip){const now=Date.now(),a=this.attempts.get(ip)??{count:0,until:now+60000};if(a.until<now){a.count=0;a.until=now+60000;}if(++a.count>10)throw Error('Too many attempts; wait a minute');this.attempts.set(ip,a);const user=this.users.find(u=>u.name===name);const actual=scryptSync(String(password).slice(0,200),user?.salt??'dummy-salt',32);if(!user||!timingSafeEqual(actual,Buffer.from(user.digest,'hex')))throw Error('Sign-in details not recognised');return this.session(user.name,user.role);}
+ session(name,role){const token=randomBytes(32).toString('hex'),csrf=randomBytes(24).toString('hex');this.sessions.set(token,{name,role,csrf,expires:Date.now()+12*3600000});return {token,...this.sessions.get(token)};}
+ get(cookie=''){const match=/(?:^|;\s*)lifeac=([a-f\d]{64})(?:;|$)/.exec(cookie);const session=match?this.sessions.get(match[1]):null;return session&&session.expires>Date.now()?session:null;}
+}

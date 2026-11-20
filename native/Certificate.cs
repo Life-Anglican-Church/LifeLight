@@ -1,0 +1,6 @@
+using System;using System.IO;using System.Security.Cryptography;using System.Security.Cryptography.X509Certificates;
+static class CertificateTool{
+ static int Main(string[] args){try{if(args.Length!=2)return 2;string password=Console.ReadLine();using(var rsa=new RSACryptoServiceProvider(2048)){
+ var request=new CertificateRequest("CN=LifeAC Lighting",rsa,HashAlgorithmName.SHA256,RSASignaturePadding.Pkcs1);var san=new SubjectAlternativeNameBuilder();san.AddDnsName("localhost");san.AddIpAddress(System.Net.IPAddress.Loopback);san.AddIpAddress(System.Net.IPAddress.Parse(args[1]));request.CertificateExtensions.Add(san.Build());request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false,false,0,false));request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature|X509KeyUsageFlags.KeyEncipherment,true));var uses=new OidCollection();uses.Add(new Oid("1.3.6.1.5.5.7.3.1"));request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(uses,true));using(var certificate=request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5),DateTimeOffset.UtcNow.AddYears(1))){File.WriteAllBytes(args[0],certificate.Export(X509ContentType.Pfx,password));File.WriteAllBytes(args[0]+".cer",certificate.Export(X509ContentType.Cert));}}
+ return 0;}catch(Exception e){Console.Error.WriteLine(e.GetType().Name);return 1;}}
+}

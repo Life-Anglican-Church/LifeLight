@@ -1,0 +1,34 @@
+param([string]$BuildRoot)
+$ErrorActionPreference = 'Stop'
+$lightingRoot = if($BuildRoot) { $BuildRoot } else { Split-Path $PSScriptRoot }
+$workspaceRoot = Split-Path $lightingRoot
+$releaseRoot = Join-Path $lightingRoot 'dist'
+$packageRoot = Join-Path $releaseRoot 'LifeAC-Lighting'
+$compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+$readCredential = Join-Path $workspaceRoot '.release-secrets\read.txt'
+if (!(Test-Path -LiteralPath $readCredential)) { throw 'Supply the read-only release credential outside the source tree.' }
+& (Join-Path $lightingRoot 'build.cmd')
+if ($LASTEXITCODE -ne 0) { throw 'Application build failed.' }
+New-Item -ItemType Directory -Force -Path $releaseRoot,$packageRoot | Out-Null
+& $compiler /nologo /target:winexe /platform:anycpu "/out:$releaseRoot\LifeAC-Lighting-Updater.exe" "/win32icon:$lightingRoot\web\assets\lifeac.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll "/resource:$readCredential,LifeAC.ReadOnlyAccess" (Join-Path $lightingRoot 'native\Deployment.cs') (Join-Path $lightingRoot 'native\Updater.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Updater build failed.' }
+foreach($folder in @('src','web','bin','runtime')) {
+    Copy-Item -LiteralPath (Join-Path $lightingRoot $folder) -Destination $packageRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path (Join-Path $packageRoot 'inputs'),(Join-Path $packageRoot 'docs') | Out-Null
+Copy-Item -LiteralPath (Join-Path $lightingRoot 'inputs\show.json'),(Join-Path $lightingRoot 'inputs\commissioning-frame.json') -Destination (Join-Path $packageRoot 'inputs')
+foreach($file in @('README.md','THIRD-PARTY-NOTICES.txt','LifeAC Lighting.exe')) { Copy-Item -LiteralPath (Join-Path $lightingRoot $file) -Destination $packageRoot -Force }
+foreach($file in @('COMMISSIONING.md','VALIDATION.md','VENDOR-QUESTIONS.txt','RELEASE-NOTES.md')) { Copy-Item -LiteralPath (Join-Path $lightingRoot "docs\$file") -Destination (Join-Path $packageRoot 'docs') -Force }
+Copy-Item -LiteralPath (Join-Path $releaseRoot 'LifeAC-Lighting-Updater.exe') -Destination (Join-Path $packageRoot 'LifeAC Lighting Updater.exe') -Force
+$archive = Join-Path $releaseRoot 'LifeAC-Lighting-win-x64.zip'
+Compress-Archive -LiteralPath $packageRoot -DestinationPath $archive -Force
+$archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+$hashFile = Join-Path $releaseRoot 'payload-sha256.txt'
+[IO.File]::WriteAllText($hashFile,$archiveHash)
+& $compiler /nologo /target:winexe /platform:anycpu "/out:$releaseRoot\LifeAC-Lighting-Setup-0.1.0.exe" "/win32icon:$lightingRoot\web\assets\lifeac.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll "/resource:$readCredential,LifeAC.ReadOnlyAccess" "/resource:$archive,LifeAC.Payload" "/resource:$hashFile,LifeAC.PayloadHash" (Join-Path $lightingRoot 'native\Deployment.cs') (Join-Path $lightingRoot 'native\Setup.cs')
+if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
+$manifest = @{schema='1';version='0.1.0';package='LifeAC-Lighting-win-x64.zip';sha256=$archiveHash;entry='LifeAC Lighting.exe'}
+[IO.File]::WriteAllText((Join-Path $releaseRoot 'update-manifest.json'),($manifest | ConvertTo-Json -Compress))
+$sums = Get-ChildItem -LiteralPath $releaseRoot -File | Where-Object {$_.Extension -eq '.exe' -or $_.Name -in @('LifeAC-Lighting-win-x64.zip','update-manifest.json')} | ForEach-Object { ((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()) + '  ' + $_.Name }
+$sums | Set-Content -LiteralPath (Join-Path $releaseRoot 'SHA256SUMS.txt') -Encoding ASCII
+Write-Output 'Installer, updater, application archive and update manifest built. No installation was performed.'

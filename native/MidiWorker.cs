@@ -1,0 +1,9 @@
+using System;using System.Runtime.InteropServices;using System.Web.Script.Serialization;using System.Threading;
+static class MidiWorker{
+ [StructLayout(LayoutKind.Sequential,CharSet=CharSet.Unicode)]struct Caps{public ushort mid,pid;public uint version;[MarshalAs(UnmanagedType.ByValTStr,SizeConst=32)]public string name;public uint support;}
+ delegate void Callback(IntPtr h,uint msg,IntPtr instance,IntPtr p1,IntPtr p2);
+ [DllImport("winmm.dll")]static extern uint midiInGetNumDevs();[DllImport("winmm.dll",CharSet=CharSet.Unicode,EntryPoint="midiInGetDevCapsW")]static extern uint midiInGetDevCaps(UIntPtr id,out Caps caps,uint size);
+ [DllImport("winmm.dll")]static extern uint midiInOpen(out IntPtr handle,uint device,Callback cb,IntPtr instance,uint flags);[DllImport("winmm.dll")]static extern uint midiInStart(IntPtr h);[DllImport("winmm.dll")]static extern uint midiInStop(IntPtr h);[DllImport("winmm.dll")]static extern uint midiInClose(IntPtr h);
+ static Callback cb;static readonly JavaScriptSerializer json=new JavaScriptSerializer();
+ static int Main(string[] args){if(args.Length==1&&args[0]=="--list"){for(uint i=0;i<midiInGetNumDevs();i++){Caps c;if(midiInGetDevCaps((UIntPtr)i,out c,(uint)Marshal.SizeOf(typeof(Caps)))==0)Console.WriteLine(json.Serialize(new{id=i,name=c.name}));}return 0;}uint index;if(args.Length!=1||!UInt32.TryParse(args[0],out index))return 2;IntPtr handle;cb=(h,msg,instance,p1,p2)=>{if(msg!=0x3C3)return;long packed=p1.ToInt64();int status=(int)(packed&255),value=(int)((packed>>16)&127),key=(int)((packed>>8)&127),type=status>>4;if(type!=8&&type!=9&&type!=11)return;if(type==8)value=0;Console.WriteLine(json.Serialize(new{type=type==11?"cc":"note",channel=(status&15)+1,key=key,value=value}));};if(midiInOpen(out handle,index,cb,IntPtr.Zero,0x30000)!=0)return 3;try{if(midiInStart(handle)!=0)return 4;Console.ReadLine();}finally{midiInStop(handle);midiInClose(handle);}GC.KeepAlive(cb);return 0;}
+}
