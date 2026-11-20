@@ -1,8 +1,12 @@
-# LifeAC Lighting 0.3.0
+# LifeAC Lighting 0.3.1
 
-Install LifeAC-Lighting-Setup-0.3.0.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
+Install LifeAC-Lighting-Setup-0.3.1.exe on the projector PC. Close the previous Lighting host from its tray menu first. Existing show data and backups are kept. Use this new installer or the NEW updater EXE for the 0.1 to 0.2 upgrade: the original updater has a file-size limit below the desktop runtime size.
 
 Open the LifeAC Lighting shortcut. It now opens a dedicated Windows application window. USB, timing and MIDI run in an independent Node host supervised by the tray launcher. The Electron window is a client. Closing its window leaves lighting running in the tray; the tray menu reopens the window or stops the host. Page changes do not close the USB connection. On a host PC, automatic USB acquisition is enabled: when one verified controller is detected, Full Stage is applied by default. Configure or disable this under Settings. A deliberate Release suspends automatic reacquisition until the next takeover or restart.
+
+Manual fixture holds: unlock Admin, open Lights > Manual controls, and adjust the required channels. Holds survive scene/MIDI changes and automatic USB reconnect. The banner lists affected lights and lets Admin save held values to every step in a chosen scene. Release clears holds. Closing a client keeps them; stopping the host or shutting down ends them. Scene saves include and clear held values.
+
+11am: use the header button to run at 75% brightness without editing scenes. Dedicated dimmers are scaled once; colour-only fixtures have their colour channels scaled. Position and shutter channels are unchanged. Toggle off for normal brightness. This is a manual service toggle, with normal brightness on a new host session.
 
 The app starts in Volunteer mode. Unlock Admin using PIN 5433. You can change the PIN in Settings. Remote accounts have separate View, Volunteer or Admin permissions; Admin accounts also unlock editing with the PIN.
 
