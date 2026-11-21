@@ -10,5 +10,7 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 "%LIFEAC_CSC%" /nologo /target:exe /platform:anycpu /out:bin\LifeAC-MidiWorker.exe /reference:System.Web.Extensions.dll native\MidiWorker.cs
 if errorlevel 1 exit /b 1
+"%LIFEAC_CSC%" /nologo /target:exe /platform:x86 /out:bin\LifeAC-StandaloneWorker.exe /reference:System.Web.Extensions.dll tools\standalone-reader\StandaloneReaderWorker.cs
+if errorlevel 1 exit /b 1
 "%LIFEAC_CSC%" /nologo /target:winexe /platform:anycpu /out:"LifeAC Lighting.exe" /win32icon:web\assets\lifeac.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:Microsoft.CSharp.dll native\Launcher.cs
 exit /b %errorlevel%
