@@ -1,3 +1,4 @@
+import {correctUvRoles} from './channel-roles.mjs';
 import {inflateSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {migrateShow} from './model.mjs';
@@ -39,7 +40,7 @@ export function importShow(buffer){
    if(!profile)throw Error('Missing profile');fixtures.push({id:`fixture-${num(n,'LPId')}`,sourceId:num(n,'LPId'),name:text(n,'LPName'),profileId:profile.id,address:num(n,'LPAddress')+1,universe:num(n,'LPUniverse')+1,width:profile.channels.length,group:'',position:null});
   }
  }
- validatePatch(fixtures,profiles);
+ correctUvRoles(profiles);validatePatch(fixtures,profiles);
  for(const page of list(one(root,'LPPages'),'LPPage'))for(const scene of list(one(page,'LPScenes'),'LPScene')){
   const id=`scene-${scenes.length+1}`;let reason=null;const masks=list(one(scene,'LPActivUniverses'),'LPActivUniverse');const mask=text(masks.find(n=>num(n,'LPUniverse')===0),'LPActivBuffer');
   const stepNodes=list(one(scene,'LPSteps'),'LPStep'),inheritedIds=text(one(stepNodes[0],'SData'),'SIds');
@@ -58,6 +59,6 @@ export function suggestAddress(show,profileId,quantity=1,universe=1){const p=sho
 export function importProfile(buffer,name='Imported profile'){
  let profile;const plain=buffer[0]===60||buffer[0]===123?buffer:unpack(buffer);
  if(plain[0]===123)profile=JSON.parse(plain.toString('utf8'));else {const source=plain.toString('utf8').replace(/^\s*<\?xml[^>]*\?>/,'');const node=xml(source);const wrapped=node.name==='LPProfile'?`<LPFile><LPPatch><LPFixtures><LPLibrary LPName="Imported profile">${source}</LPLibrary></LPFixtures></LPPatch></LPFile>`:source;const imported=importShow(Buffer.from(wrapped));if(imported.profiles.length!==1)throw Error('Import one single-mode profile at a time');profile=imported.profiles[0];profile.name=name.replace(/\.[^.]+$/,'');}
- profile.id='imported-profile';validateProfiles([profile]);return profile;
+ profile.id='imported-profile';correctUvRoles([profile]);validateProfiles([profile]);return profile;
 }
-export function validateProfiles(profiles){const ids=new Set();if(!Array.isArray(profiles)||profiles.length>500)throw Error('Profile limit');for(const p of profiles){if(typeof p.id!=='string'||ids.has(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>160||typeof p.mode!=='string'||!p.mode.trim()||!Array.isArray(p.channels)||p.channels.length<1||p.channels.length>512)throw Error('Enter a profile name, exact mode and channel chart');ids.add(p.id);p.channels.forEach((c,i)=>{if(c.offset!==i||typeof c.name!=='string'||c.name.length>160||!['dimmer','red','green','blue','white','amber','pan','tilt','zoom','shutter','protected'].includes(c.role)||typeof c.coarse!=='boolean'||typeof c.fine!=='boolean')throw Error('Invalid channel definition');if(c.coarse&&(!p.channels[i+1]?.fine||p.channels[i+1].role!==c.role)||c.fine&&(!p.channels[i-1]?.coarse||p.channels[i-1].role!==c.role))throw Error('16-bit coarse and fine channels must be adjacent and paired');});}return true;}
+export function validateProfiles(profiles){const ids=new Set();if(!Array.isArray(profiles)||profiles.length>500)throw Error('Profile limit');for(const p of profiles){if(typeof p.id!=='string'||ids.has(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>160||typeof p.mode!=='string'||!p.mode.trim()||!Array.isArray(p.channels)||p.channels.length<1||p.channels.length>512)throw Error('Enter a profile name, exact mode and channel chart');ids.add(p.id);p.channels.forEach((c,i)=>{if(c.offset!==i||typeof c.name!=='string'||c.name.length>160||!['dimmer','red','green','blue','white','amber','uv','pan','tilt','zoom','shutter','protected'].includes(c.role)||typeof c.coarse!=='boolean'||typeof c.fine!=='boolean')throw Error('Invalid channel definition');if(c.coarse&&(!p.channels[i+1]?.fine||p.channels[i+1].role!==c.role)||c.fine&&(!p.channels[i-1]?.coarse||p.channels[i-1].role!==c.role))throw Error('16-bit coarse and fine channels must be adjacent and paired');});}return true;}

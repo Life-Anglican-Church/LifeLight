@@ -1,4 +1,4 @@
-# LifeAC Lighting 0.6.0
+# LifeAC Lighting 0.6.1
 
 Windows church lighting control. Close the previous app from its tray menu before updating. Shows, accounts, mappings and photo positions are kept.
 
@@ -11,6 +11,8 @@ The main screen has scenes on the left and the stage on the right. Sunday Servic
 Select one or more square fixture pins to control lights. Admins can select members under Choose lights > Create light group to create a single group pin and named button. Right-click that named button to edit or ungroup. Individual selection remains available. Colour-only/white-only lights have a software dimmer that preserves colour while changing brightness. Only shared supported controls appear for multiple fixtures. These create manual overrides that hold through scene, step, effect and MIDI changes. The Manual icon releases individual/all holds or opens Save. The Save button beside Release all lights starts with all fixtures selected; choose a subset on the photo if desired, then an existing scene or a new scene/folder. Save & use scene captures selected lights into every step, removes their effects, activates the saved scene and releases only those lights’ holds. Other holds remain. Saved values exclude the temporary 11am mute. Release all lights clears manual holds and resumes the current scene without disconnecting USB. Disconnect controller releases USB and clears holds. Host shutdown also ends holds.
 
 All dimmers now show percentages, including software dimmers for fixtures without a master dimmer. Individual colour faders are replaced by a hexagonal hue/saturation picker, quick swatches, automatic white mixing and eight saved colour slots. In Admin mode, right-click a slot to save; click it to recall. Selected-light controls span the bottom quarter of the window; the stage photo stays large on the right above them.
+
+UV-capable fixtures have their own 0–100% UV fader, separate from the colour palette. The two UV banks on each Beamz HexCan are linked. Multi-selection shows UV when all selected lights support it. UV follows the master dimmer and 11am mute and can be held, saved or released normally. Existing UV channels mislabelled as amber are corrected automatically, with a backup and without changing addresses or stored scene values.
 
 11am is a fixture mute, replacing the old 75% brightness reduction. In Admin mode, right-click 11am or open Settings > 11am mute group, select the lights and save. Clicking 11am forces those lights dark after all scenes/manual controls. Other lights keep their normal brightness. Cues and MIDI keep working; turning it off returns the muted lights to the current look. Positions/function channels and the USB connection are retained. Membership is saved; it starts empty so you choose the intended lights. Normal host shutdown clears the active toggle. Scene Save captures the unmuted look.
 
