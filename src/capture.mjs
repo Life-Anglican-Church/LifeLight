@@ -1,4 +1,4 @@
-// Capture the host's commanded look before the separate 11am master reduction.
+// Capture the host's commanded look before the temporary 11am fixture mute.
 // It is not a physical reading from the fixtures.
 export function saveLook(show,engine,{fixtureIds,sceneId,name,folder,id}){
  if(!Array.isArray(fixtureIds)||!fixtureIds.length||new Set(fixtureIds).size!==fixtureIds.length||fixtureIds.some(id=>!show.fixtures.some(f=>f.id===id&&f.universe===1)))throw Error('Select at least one configured light');
