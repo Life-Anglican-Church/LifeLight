@@ -1,4 +1,4 @@
-# LifeAC Lighting 0.4.0
+# LifeAC Lighting 0.5.0
 
 Windows church lighting control. Close the previous app from its tray menu before updating. Shows, accounts, mappings and photo positions are kept.
 
@@ -6,9 +6,9 @@ Run the new installer to choose the PC role. **Control another PC** installs a r
 
 The host owns USB, MIDI and timing. Client windows can close while lighting continues. Host MIDI connects automatically to the saved input, sole loopMIDI port or sole input and reconnects if it reappears. If several ports are ambiguous, choose one in Settings; that immediately saves and connects it. Keep loopMIDI and ProPresenter running in the host's Windows login. Received notes and scene-match decisions appear in MIDI status and diagnostic logs. Scene note mappings are under the scene's right-click menu or Settings.
 
-The main screen has scenes on the left and the stage on the right. Sunday Services is the default folder, containing Pre-Service, Full Stage, Centre Focus and Lights off. Left-click runs a scene; right-click opens scene actions. Admins drag the six-dot handle to save a new order. Open Admin using PIN 5433; change it in Settings if desired.
+The main screen has scenes on the left and the stage on the right. Sunday Services is the default folder, containing Pre-Service, Full Stage, Centre Focus and Lights off. Left-click runs a scene; right-click opens scene actions. Admins drag the six-dot handle to reorder: a tile follows the pointer while the grid reflows. Dropping saves; cancelling restores the order. Open Admin using PIN 5433; change it in Settings if desired.
 
-Select one or more fixture pins to control lights. Only shared supported controls appear for multiple fixtures. These create manual overrides that hold through scene, step, effect and MIDI changes. The Manual icon releases individual/all holds or saves them into every step of a scene. Release all lights clears manual holds and resumes the current scene without disconnecting USB. Disconnect controller releases USB and clears holds. Host shutdown also ends holds.
+Select one or more square fixture pins to control lights. Admins can select members under Choose lights > Create light group to create a single group pin and named button. Right-click that named button to edit or ungroup. Individual selection remains available. Colour-only/white-only lights have a software dimmer that preserves colour while changing brightness. Only shared supported controls appear for multiple fixtures. These create manual overrides that hold through scene, step, effect and MIDI changes. The Manual icon releases individual/all holds or opens Save. The Save button beside Release all lights starts with all fixtures selected; choose a subset on the photo if desired, then an existing scene or a new scene/folder. Save & use scene captures selected lights into every step, removes their effects, activates the saved scene and releases only those lights’ holds. Other holds remain. Saved values exclude the separate 11am reduction. Release all lights clears manual holds and resumes the current scene without disconnecting USB. Disconnect controller releases USB and clears holds. Host shutdown also ends holds.
 
 The 11am toggle applies 75% brightness to dedicated dimmers, or to colour channels on fixtures with no dimmer. Scene colour, movement, timing and stored values are retained. Toggling off restores normal brightness. It does not schedule itself by day/time.
 
