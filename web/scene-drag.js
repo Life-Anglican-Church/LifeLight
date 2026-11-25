@@ -8,16 +8,15 @@ export function wireSceneDrag(grid,onCommit){
   const grip=source.querySelector('.drag-grip');if(!grip)continue;
   grip.addEventListener('dragstart',e=>{
    const r=source.getBoundingClientRect(),ghost=source.cloneNode(true);ghost.removeAttribute('data-scene-id');ghost.querySelectorAll('[data-play]').forEach(b=>{b.removeAttribute('data-play');b.disabled=true;});ghost.classList.add('scene-drag-preview');ghost.style.width=r.width+'px';ghost.style.height=r.height+'px';document.body.append(ghost);
-   drag={source,ghost,original:cards(),dx:e.clientX-r.left,dy:e.clientY-r.top};moveGhost(e);
+   drag={source,ghost,original:cards(),slots:cards().map(n=>n.getBoundingClientRect()),lastSlot:-1,dx:e.clientX-r.left,dy:e.clientY-r.top};moveGhost(e);
    const blank=document.createElement('canvas');blank.width=blank.height=1;e.dataTransfer.setDragImage(blank,0,0);e.dataTransfer.setData('application/lifeac-scene',source.dataset.sceneId);e.dataTransfer.effectAllowed='move';source.classList.add('drag-placeholder');document.addEventListener('dragover',moveGhost);
   });
   grip.addEventListener('dragend',()=>cleanup(true));
  }
  grid.addEventListener('dragover',e=>{
   if(!drag)return;e.preventDefault();e.dataTransfer.dropEffect='move';moveGhost(e);
-  const target=e.target.closest('[data-scene-id]');if(!target||target===drag.source||!grid.contains(target))return;
-  const nodes=cards(),before=new Map(nodes.map(n=>[n,n.getBoundingClientRect()])),from=nodes.indexOf(drag.source),to=nodes.indexOf(target);
-  grid.insertBefore(drag.source,from<to?target.nextSibling:target);
+  const slot=drag.slots.findIndex(r=>e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom);if(slot<0||slot===drag.lastSlot)return;drag.lastSlot=slot;
+  const nodes=cards(),from=nodes.indexOf(drag.source);if(from===slot)return;const before=new Map(nodes.map(n=>[n,n.getBoundingClientRect()]));nodes.splice(from,1);nodes.splice(slot,0,drag.source);for(const node of nodes)grid.append(node);
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches)for(const n of nodes){if(n===drag.source)continue;const a=before.get(n),b=n.getBoundingClientRect();n.getAnimations().forEach(a=>a.cancel());n.animate([{transform:`translate(${a.left-b.left}px,${a.top-b.top}px)`},{transform:'translate(0,0)'}],{duration:150,easing:'ease-out'});}
  });
  grid.addEventListener('drop',e=>{if(!drag)return;e.preventDefault();const ids=cards().map(n=>n.dataset.sceneId),old=drag.original.map(n=>n.dataset.sceneId);cleanup(false);if(ids.some((id,i)=>id!==old[i]))Promise.resolve(onCommit(ids)).catch(()=>{for(const id of old){const n=grid.querySelector('[data-scene-id="'+id+'"]');if(n)grid.append(n);}});});

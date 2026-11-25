@@ -1,0 +1,2 @@
+import dgram from 'node:dgram';
+export function advertise(getInfo,{port=47833,onError=()=>{}}={}){const socket=dgram.createSocket({type:'udp4',reuseAddr:true});socket.on('error',onError);socket.on('message',(bytes,peer)=>{if(bytes.length>1024)return;try{if(JSON.parse(bytes).service!=='lifeac-discover')return;const info=getInfo();if(info?.url)socket.send(Buffer.from(JSON.stringify({service:'lifeac-lighting',...info})),peer.port,peer.address);}catch{}});socket.bind(port,'0.0.0.0');return ()=>socket.close();}

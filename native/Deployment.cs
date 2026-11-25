@@ -1,6 +1,6 @@
 using System;using System.IO;using System.IO.Compression;using System.Net;using System.Diagnostics;using System.Text;using System.Threading;using System.Security.Cryptography;using System.Reflection;using System.Web.Script.Serialization;using Microsoft.Win32;
 static class Deployment{
- public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.6.1";
+ public const string Repo="LifeAnglicanChurch/LifeACLighting",Version="0.7.0";
  public static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","LifeAC-Lighting");
  public static readonly string Data=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"LifeAC-Lighting");
  public static readonly JavaScriptSerializer Json=new JavaScriptSerializer{MaxJsonLength=4000000};
@@ -29,7 +29,7 @@ static class Deployment{
    dynamic shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));foreach(string folder in new[]{Environment.GetFolderPath(Environment.SpecialFolder.Programs),Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)}){Shortcut(shell,Path.Combine(folder,"LifeAC Lighting.lnk"),exe,"",target);Shortcut(shell,Path.Combine(folder,"Update LifeAC Lighting.lnk"),updater,"",target);}
    File.WriteAllBytes(Path.Combine(Data,"update-access.bin"),ProtectedData.Protect(Encoding.UTF8.GetBytes(ReadResource("LifeAC.ReadOnlyAccess")),null,DataProtectionScope.CurrentUser));
    string metadata=Path.Combine(Data,"install.json"),tmp=metadata+".new";File.WriteAllText(tmp,Json.Serialize(new{version=version,directory=target,role=installHost?"host":"client"}));if(File.Exists(metadata))File.Replace(tmp,metadata,metadata+".previous",true);else File.Move(tmp,metadata);
-   using(var key=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\LifeAC-Lighting")){key.SetValue("DisplayName","LifeAC Lighting");key.SetValue("DisplayVersion",version);key.SetValue("Publisher","Life Anglican Church");key.SetValue("InstallLocation",target);key.SetValue("DisplayIcon",exe);key.SetValue("UninstallString","\""+updater+"\" --uninstall");key.SetValue("NoModify",1);key.SetValue("NoRepair",1);}
+   try{var startup=Json.Deserialize<System.Collections.Generic.Dictionary<string,bool>>(File.ReadAllText(Path.Combine(Data,"startup.json")));if(startup["enabled"])using(var run=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"))run.SetValue("LifeAC Lighting","\""+exe+"\" --autostart");}catch{}using(var key=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\LifeAC-Lighting")){key.SetValue("DisplayName","LifeAC Lighting");key.SetValue("DisplayVersion",version);key.SetValue("Publisher","Life Anglican Church");key.SetValue("InstallLocation",target);key.SetValue("DisplayIcon",exe);key.SetValue("UninstallString","\""+updater+"\" --uninstall");key.SetValue("NoModify",1);key.SetValue("NoRepair",1);}
    return exe;
   }finally{if(Directory.Exists(stage)&&Within(stage,Root)&&Path.GetDirectoryName(stage).Equals(Root,StringComparison.OrdinalIgnoreCase)&&Path.GetFileName(stage).StartsWith("staging-"))Directory.Delete(stage,true);}
  }
@@ -50,6 +50,7 @@ static class Deployment{
  public static void RemoveInstallation(){
   if(HostRunning())throw new InvalidOperationException("Close LifeAC Lighting first");string full=Path.GetFullPath(Root),expected=Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","LifeAC-Lighting"));if(full!=expected||!full.EndsWith("\\Programs\\LifeAC-Lighting",StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException("Uninstall target rejected");
   if(Directory.Exists(full)){CheckTree(full);Directory.Delete(full,true);}foreach(string folder in new[]{Environment.GetFolderPath(Environment.SpecialFolder.Programs),Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)})foreach(string name in new[]{"LifeAC Lighting.lnk","Update LifeAC Lighting.lnk"}){string file=Path.Combine(folder,name);if(File.Exists(file))File.Delete(file);}
+  using(var run=Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run",true)){if(run!=null)run.DeleteValue("LifeAC Lighting",false);}
   Registry.CurrentUser.DeleteSubKeyTree(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\LifeAC-Lighting",false);
  }
  static void CheckTree(string dir){if((File.GetAttributes(dir)&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException("Uninstall found a redirected folder; manual review required");foreach(string child in Directory.GetDirectories(dir))CheckTree(child);}
