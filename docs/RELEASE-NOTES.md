@@ -1,5 +1,7 @@
 # LifeAC Lighting 0.8.0 — New control console and LAN fixes
 
+Lightweight updater revision: **LifeAC-Lighting-Updater.exe** also installs the app when missing, with Primary, Backup and Network Controller choices. It downloads the application automatically. Existing installations retain their show and PC role. The new updater is kept in the installed application for future updates.
+
 Install this version over the existing copy to keep your show. Close Lighting from its tray before updating. Download the new Setup or Updater from this release once: the previous updater's credential stopped working when the repositories moved to the organisation. Both new executables use Life-Anglican-Church/Lighting and the replacement read-only credential.
 
 - **Rebuilt console:** a new screen structure and a single new stylesheet based on the supplied reference. Left navigation has Control, Scenes, Fixtures, Groups and Settings. Original church logo, stage photo, scene names, fixture patch, layouts, mappings and saved looks are retained. Two-column tinted scene tiles sit left; the stage and group buttons are central; fixture controls are in the right panel. Colour, Movement and Advanced tabs keep the controls together. Dark mode is default, with a remembered light/dark switch.
