@@ -1,3 +1,9 @@
+# Validation — 26 November 2026, v0.8.2
+
+64 automated checks pass.
+
+New regression checks reproduce wrong saved PFX passwords and a busy listener; recovery persists a valid certificate/password pair before binding, and preserves identity across IP changes. Compiled firewall policy tests exercise the production rule application method against an in-memory policy, verifying exact-runtime inbound block repair, both ports/profiles, repeat repair and removal without altering other applications or outbound rules. A real loopback UDP test blocks the discovery port, releases it and verifies automatic recovery and the routed reply address. No physical USB/MIDI, real firewall changes or installed application execution were performed on the laptop.
+
 # Validation — 26 November 2026, v0.8.1
 
 61 automated tests pass. A compiled launcher check confirms Primary/Backup use the host path and Network Controllers take the desktop-only path before tray creation. Real loopback UDP tests validate discovery response filtering and host discovery, and IP/hostname normalization selects HTTPS port 47832. Existing tests cover engine stability, MIDI, authentication, role filtering, installation helper detection and bounded cleanup.

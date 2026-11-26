@@ -2,7 +2,7 @@ param([string]$BuildRoot,[switch]$LightweightOnly)
 $ErrorActionPreference = 'Stop'
 $lightingRoot = if($BuildRoot) { $BuildRoot } else { Split-Path $PSScriptRoot }
 $workspaceRoot = Split-Path $lightingRoot
-$releaseRoot = Join-Path $lightingRoot 'dist\v0.8.1'
+$releaseRoot = Join-Path $lightingRoot 'dist\v0.8.2'
 $packageRoot = Join-Path $releaseRoot 'LifeAC-Lighting'
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $readCredential = Join-Path $workspaceRoot '.release-secrets\read.txt'
@@ -43,10 +43,10 @@ $archiveHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLow
 $hashFile = Join-Path $releaseRoot 'payload-sha256.txt'
 [IO.File]::WriteAllText($hashFile,$archiveHash)
 if (!$LightweightOnly) {
-    & $compiler /nologo /target:winexe /platform:anycpu "/out:$releaseRoot\LifeAC-Lighting-Setup-0.8.1.exe" "/win32icon:$lightingRoot\web\assets\lifeac.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll "/resource:$readCredential,LifeAC.ReadOnlyAccess" "/resource:$archive,LifeAC.Payload" "/resource:$hashFile,LifeAC.PayloadHash" (Join-Path $lightingRoot 'native\Deployment.cs') (Join-Path $lightingRoot 'native\Setup.cs')
+    & $compiler /nologo /target:winexe /platform:anycpu "/out:$releaseRoot\LifeAC-Lighting-Setup-0.8.2.exe" "/win32icon:$lightingRoot\web\assets\lifeac.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll "/resource:$readCredential,LifeAC.ReadOnlyAccess" "/resource:$archive,LifeAC.Payload" "/resource:$hashFile,LifeAC.PayloadHash" (Join-Path $lightingRoot 'native\Deployment.cs') (Join-Path $lightingRoot 'native\Setup.cs')
     if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
 }
-$manifest = @{schema='1';version='0.8.1';package='LifeAC-Lighting-win-x64.zip';sha256=$archiveHash;entry='LifeAC Lighting.exe'}
+$manifest = @{schema='1';version='0.8.2';package='LifeAC-Lighting-win-x64.zip';sha256=$archiveHash;entry='LifeAC Lighting.exe'}
 [IO.File]::WriteAllText((Join-Path $releaseRoot 'update-manifest.json'),($manifest | ConvertTo-Json -Compress))
 $sums = Get-ChildItem -LiteralPath $releaseRoot -File | Where-Object {$_.Extension -eq '.exe' -or $_.Name -in @('LifeAC-Lighting-win-x64.zip','update-manifest.json')} | ForEach-Object { ((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()) + '  ' + $_.Name }
 $sums | Set-Content -LiteralPath (Join-Path $releaseRoot 'SHA256SUMS.txt') -Encoding ASCII

@@ -1,12 +1,11 @@
-# LifeAC Lighting 0.8.1 — LAN connections and automatic sign-in
+# LifeAC Lighting 0.8.2 — Host LAN startup and firewall repair
 
-Update the Primary/Backup host and every Network Controller. Close Lighting from its tray before using the lightweight updater. Approve the Windows administrator prompt during the host update, or use Settings → LAN & accounts → Allow LAN through Windows firewall afterwards.
+Close Lighting from the host tray and close Network Controller windows, then run the lightweight updater on both PCs. Approve the Windows administrator prompt on the host. No separate checker is required.
 
-- Firewall setup always refreshes the rules and requests administrator approval instead of silently accepting old rules. The host checks the helper exit code and shows success or refusal. TCP 47832 and UDP 47833 are allowed for the installed host Node executable across Windows network profiles and routed VPN peers. Host updates refresh the executable path in these rules.
-- Bare IP addresses and computer names automatically use HTTPS port 47832. Explicit custom ports remain supported. The connection checks that the address is a Lighting host and reports reachability, certificate or interface-loading failures separately.
-- Network Controllers scan at startup instead of opening the previous IP. Multiple interface addresses for a known host are probed and the reachable endpoint is used. Discovery probes each adapter's broadcast; remembered computer names are also resolved and queried directly. The host replies using the interface Windows routes to the requester, including VPN routes. Broadcast-free VPN discovery needs working host-name resolution or a manually entered IP; the application cannot force a VPN/router to forward broadcasts.
-- Saved sign-in details are encrypted with Windows and matched to the trusted host certificate rather than its IP. The host retains its certificate across DHCP address changes. Changed credentials return to sign-in; a changed certificate requires trust again. First use of this version requires account sign-in once to create this cache.
-- Network Controllers run as normal desktop applications. Closing their window exits; there is no tray icon or background host. Primary and Backup keep their independent host/tray behavior.
-- The connection/retry/search/manual-IP screen now uses the same dark panels, blue controls, typography and church branding as the console. The separate native host-picker window is removed.
+- Windows firewall repair now uses the Windows firewall API, verifies its rules, and disables conflicting inbound block rules only for this exact Lighting runtime. It leaves other applications and outbound rules unchanged. Ordinary allow rules cannot override an existing Windows block rule. Ports remain TCP 47832 and UDP 47833, scoped to the Lighting executable.
+- Firewall handling has its own host-only helper, independent of the updater executable and its version. This prevents an older updater from restoring older firewall handling after installing a new application.
+- The host validates its saved HTTPS certificate/password pair. It repairs an unusable identity, preserves a valid identity when IPs change, and persists the identity before attempting to bind the listener. A busy port can no longer leave a new certificate paired with the previous password. Certificate generation has a timeout.
+- Discovery starts independently before HTTPS initialization and automatically retries a failed UDP bind. A temporary startup failure no longer leaves discovery permanently absent for that session.
+- Host Settings displays actual listener status and its startup error when unavailable. Network Controllers still have no tray process and exit when closed. Saved account access, scenes, layouts and DMX/MIDI ownership are unchanged.
 
-Existing shows, scenes, roles, accounts and device drivers are retained. No change to lighting playback or USB/MIDI ownership.
+These repairs address reproduced application failure paths. They do not establish which of those paths occurred on the church PC or prove that an external router/firewall allows the connection.

@@ -4,6 +4,8 @@ cd /d "%~dp0"
 if not exist bin mkdir bin
 set "LIFEAC_CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 if not exist "%LIFEAC_CSC%" set "LIFEAC_CSC=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\csc.exe"
+"%LIFEAC_CSC%" /nologo /target:winexe /platform:anycpu /out:bin\LifeAC-Firewall.exe /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll native\Deployment.cs native\Firewall.cs
+if errorlevel 1 exit /b 1
 "%LIFEAC_CSC%" /nologo /target:exe /platform:x86 /optimize+ /out:bin\LifeAC-FrameWorker.exe /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll native\VendorSdk.cs native\FrameWorker.cs
 if errorlevel 1 exit /b 1
 "%LIFEAC_CSC%" /nologo /target:exe /platform:anycpu /out:bin\LifeAC-Certificate.exe native\Certificate.cs
