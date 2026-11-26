@@ -25,8 +25,12 @@ if ($LASTEXITCODE -ne 0) { throw 'Application build failed.' }
 New-Item -ItemType Directory -Force -Path $releaseRoot,$packageRoot | Out-Null
 & $compiler /nologo /target:winexe /platform:anycpu "/out:$releaseRoot\LifeAC-Lighting-Updater.exe" "/win32icon:$lightingRoot\web\assets\lifeac.ico" /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:System.Security.dll /reference:Microsoft.CSharp.dll "/resource:$readCredential,LifeAC.ReadOnlyAccess" (Join-Path $lightingRoot 'native\Deployment.cs') (Join-Path $lightingRoot 'native\Updater.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Updater build failed.' }
-foreach($folder in @('src','web','bin','runtime','desktop','desktop-runtime')) {
+foreach($folder in @('src','web','bin','runtime','desktop-runtime')) {
     Copy-Item -LiteralPath (Join-Path $lightingRoot $folder) -Destination $packageRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path (Join-Path $packageRoot 'desktop') | Out-Null
+foreach($file in @('main.mjs','package.json','preload.cjs','connection.mjs','connection.html','connection.js','connection.css','discovery.mjs')) {
+    Copy-Item -LiteralPath (Join-Path $lightingRoot "desktop\$file") -Destination (Join-Path $packageRoot 'desktop') -Force
 }
 New-Item -ItemType Directory -Force -Path (Join-Path $packageRoot 'inputs'),(Join-Path $packageRoot 'docs') | Out-Null
 Copy-Item -LiteralPath (Join-Path $lightingRoot 'inputs\show.json'),(Join-Path $lightingRoot 'inputs\commissioning-frame.json') -Destination (Join-Path $packageRoot 'inputs')
