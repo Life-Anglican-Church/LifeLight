@@ -15,7 +15,7 @@ test('authenticated local server: CSRF, roles, conflicts, scene control and patc
   await call('api/command',{op:'cancelPreview'});
   r=await call('api/command',{op:'addFixtures',revision:state.show.revision,quantity:1,profileId:state.show.profiles[0].id,name:'New Eve',group:'Back wall'});assert.equal(r.status,200);state=r.data;assert.equal(state.show.fixtures.length,33);assert.equal(state.show.fixtures.at(-1).address,1);
   assert.equal((await call('api/command',{op:'addFixtures',revision:1,quantity:1,profileId:state.show.profiles[0].id})).status,409);
-  await call('api/command',{op:'release'});const original=state.show.fixtures[0],oldValue=state.show.scenes[0].steps[0].values[12];
+  await call('api/command',{op:'release',pin:'5433'});const original=state.show.fixtures[0],oldValue=state.show.scenes[0].steps[0].values[12];
   r=await call('api/command',{op:'updateFixture',revision:state.show.revision,id:original.id,name:original.name,group:original.group,address:2});assert.equal(r.status,200);state=r.data;assert.equal(state.show.scenes[0].steps[0].values[1],oldValue);assert.equal(state.show.scenes[0].mask[12],false);
   assert.equal((await call('api/command',{op:'updateFixture',revision:state.show.revision,id:original.id,name:original.name,address:3000000000})).status,400);
   await call('api/command',{op:'arm',sceneId:state.show.scenes[0].id,approved:true});

@@ -1,19 +1,21 @@
-import {app,BrowserWindow,powerSaveBlocker,session,dialog} from 'electron';import path from 'node:path';import net from 'node:net';import {fileURLToPath} from 'node:url';
+import {makeConnection} from './connection.mjs';
+import {app,BrowserWindow,powerSaveBlocker,session,dialog,nativeTheme} from 'electron';import path from 'node:path';import net from 'node:net';import {fileURLToPath} from 'node:url';
+if(process.env.LIFEAC_DATA_DIR)app.setPath('userData',path.join(process.env.LIFEAC_DATA_DIR,'desktop-session'));
 const root=path.resolve(fileURLToPath(new URL('..',import.meta.url)));let host,window,quitting=false,blocker,control,parentTimer;
 function open(){if(window&&!window.isDestroyed()){if(window.isMinimized())window.restore();window.show();window.focus();}}
 async function stop(){if(quitting)return;quitting=true;clearInterval(parentTimer);control?.close();window?.destroy();try{// The independent host owns USB/MIDI and survives the client.
 }finally{if(blocker!=null)powerSaveBlocker.stop(blocker);app.quit();}}
-async function start(){
- window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'LifeAC Lighting',icon:path.join(root,'web/assets/lifeac.ico'),backgroundColor:'#123b48',autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,backgroundThrottling:false}});
+async function start(){nativeTheme.themeSource='dark';
+ window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'LifeAC Lighting',icon:path.join(root,'web/assets/lifeac.ico'),backgroundColor:'#10151c',autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(root,'desktop/preload.cjs'),backgroundThrottling:false}});
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));session.defaultSession.setPermissionRequestHandler((_wc,_p,callback)=>callback(false));
  window.on('close',event=>{if(!quitting){event.preventDefault();window.hide();}});
  window.setTitle('LifeAC Lighting — opening…');
  const endpoint=process.env.LIFEAC_HOST_URL;if(!endpoint)throw Error('Open LifeAC Lighting using its Windows launcher.');const target=new URL(endpoint);if(!['http:','https:'].includes(target.protocol)||target.protocol==='http:'&&target.hostname!=='127.0.0.1')throw Error('Use HTTPS for a remote lighting host');host={url:target.origin+'/',bootstrap:target.hash.slice(1)};
  const allowed=new URL(host.url).origin;window.webContents.on('will-navigate',(event,url)=>{if(new URL(url).origin!==allowed)event.preventDefault();});
-  await window.loadURL(host.url+(host.bootstrap?'#'+host.bootstrap:''));console.log('READY '+JSON.stringify({url:host.url}));
+  const connection=makeConnection({window,endpoint,dataDir:process.env.LIFEAC_DATA_DIR});await connection.connect();console.log('READY '+JSON.stringify({url:host.url}));
 }
 if(!app.requestSingleInstanceLock()){app.quit();}else{
- app.on('certificate-error',(event,contents,url,error,certificate,callback)=>{if(contents!==window?.webContents)return callback(false);event.preventDefault();dialog.showMessageBox(window,{type:'question',title:'Lighting host certificate',message:'Trust this lighting PC?',detail:new URL(url).origin+'\nCertificate: '+certificate.fingerprint+'\nCompare with the fingerprint shown in host Settings.',buttons:['Cancel','Trust for this session'],defaultId:0,cancelId:0}).then(result=>callback(result.response===1));});app.on('second-instance',open);app.on('activate',open);
+ app.on('second-instance',open);app.on('activate',open);
  // Do not await app.whenReady() at module scope: Electron waits for its ESM
  // entry module to finish evaluating before it can emit the ready event.
  app.whenReady().then(start).catch(async error=>{console.error(error.stack??String(error));dialog.showErrorBox('LifeAC Lighting could not open',error.message+'\nPlease include the startup log when reporting this problem.');await stop();});

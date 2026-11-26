@@ -1,0 +1,1 @@
+const {contextBridge,ipcRenderer}=require('electron');if(location.protocol==='file:'&&location.pathname.endsWith('/connection.html'))contextBridge.exposeInMainWorld('lightingConnection',{retry:()=>ipcRenderer.invoke('lighting:retry'),choose:()=>ipcRenderer.invoke('lighting:choose')});
