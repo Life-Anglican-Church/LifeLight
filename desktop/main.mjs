@@ -10,8 +10,7 @@ async function start(){nativeTheme.themeSource='dark';
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));session.defaultSession.setPermissionRequestHandler((_wc,_p,callback)=>callback(false));
  window.on('close',event=>{if(!quitting){event.preventDefault();window.hide();}});
  window.setTitle('LifeAC Lighting — opening…');
- const endpoint=process.env.LIFEAC_HOST_URL;if(!endpoint)throw Error('Open LifeAC Lighting using its Windows launcher.');const target=new URL(endpoint);if(!['http:','https:'].includes(target.protocol)||target.protocol==='http:'&&target.hostname!=='127.0.0.1')throw Error('Use HTTPS for a remote lighting host');host={url:target.origin+'/',bootstrap:target.hash.slice(1)};
- const allowed=new URL(host.url).origin;window.webContents.on('will-navigate',(event,url)=>{if(new URL(url).origin!==allowed)event.preventDefault();});
+ const endpoint=process.env.LIFEAC_HOST_URL;if(!endpoint)throw Error('Open LifeAC Lighting using its Windows launcher.');if(endpoint!=='auto'){const target=new URL(endpoint);if(!['http:','https:'].includes(target.protocol)||target.protocol==='http:'&&target.hostname!=='127.0.0.1')throw Error('Use HTTPS for a remote lighting host');host={url:target.origin+'/',bootstrap:target.hash.slice(1)};}else host={url:'auto'};
   const connection=makeConnection({window,endpoint,dataDir:process.env.LIFEAC_DATA_DIR});await connection.connect();console.log('READY '+JSON.stringify({url:host.url}));
 }
 if(!app.requestSingleInstanceLock()){app.quit();}else{

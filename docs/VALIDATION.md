@@ -1,3 +1,11 @@
+# Validation — 26 November 2026, v0.8.1
+
+60 automated tests pass. Real loopback UDP tests validate discovery response filtering and host discovery, and IP/hostname normalization selects HTTPS port 47832. Existing tests cover engine stability, MIDI, authentication, role filtering, installation helper detection and bounded cleanup.
+
+Hidden Windows Electron tests pass: visible connection failure and retry, certificate trust, HTTPS account login, a scene cue to an independent simulated host, Windows-encrypted credential persistence, automatic host selection and sign-in at a changed endpoint with the same certificate. Discovery selection in this final roaming desktop test is injected; actual UDP is tested separately on loopback. No USB/MIDI device, installed application, installer, uninstaller or real firewall configuration was executed or changed on this laptop.
+
+The firewall command no longer skips stale rules. Rules are scoped to the installed host Node executable and lighting ports, cover all Windows profiles and routed addresses, and the app awaits the elevated helper result. Actual Windows UAC/firewall approval and cross-PC LAN/VPN connectivity still require the church PCs. A VPN that suppresses broadcasts and cannot resolve the host computer name requires direct IP entry.
+
 # Validation — 26 November 2026, v0.8.0
 
 57 automated tests pass. Added checks cover master dimming on hardware-master and colour-only fixtures, eight/sixteen-bit channels and UV, protected/movement retention, unscaled scene capture, icon preview under mute/master, compatible recovery and MIDI cue mute without closing the input. Network checks cover matching-subnet discovery addresses, compiled directed broadcast/reply parsing, actual loopback HTTPS credential login and refusal of local bootstrap over HTTPS. PIN-confirmed disconnect and folder ordering are validated. Compiled installation tests filter client-only files, prune old host releases and remove app/data directories only against explicitly bounded temporary fixtures.
