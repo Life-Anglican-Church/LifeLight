@@ -85,6 +85,7 @@ public final class MainActivity extends Activity {
     private LinearLayout statusCard;
     private Button release, releaseAll;
     private Drawable photo;
+    private PilotUpdate pendingUpdate;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -98,6 +99,46 @@ public final class MainActivity extends Activity {
         try { host = LiveHost.load(this); } catch (Exception error) { LiveHost.forget(this); }
         if (host != null) enterLive();
         else render();
+        checkForPilotUpdate();
+    }
+
+    private void checkForPilotUpdate() {
+        Thread check = new Thread(() -> {
+            try {
+                long version = getPackageManager().getPackageInfo(getPackageName(), 0).getLongVersionCode();
+                PilotUpdate update = PilotUpdate.check(version);
+                if (update != null) ui.post(() -> {
+                    if (isDestroyed() || isFinishing()) return;
+                    pendingUpdate = update;
+                    offerPilotUpdate();
+                });
+            } catch (Exception ignored) {
+                // Startup and local control are available without internet access.
+            }
+        }, "LifeLIGHT update check");
+        check.setDaemon(true);
+        check.start();
+    }
+
+    private void offerPilotUpdate() {
+        if (pendingUpdate == null || !resumed || !hasWindowFocus() || isFinishing()) return;
+        PilotUpdate update = pendingUpdate;
+        pendingUpdate = null;
+        dialog().setTitle("LifeLIGHT " + update.version + " is available")
+            .setMessage("Download the APK from GitHub and open it to install the update.")
+            .setNegativeButton("Later", null)
+            .setPositiveButton("Download APK", (window, which) -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(update.downloadUrl)));
+                } catch (android.content.ActivityNotFoundException error) {
+                    Toast.makeText(this, "Open GitHub in a browser to download the APK.", Toast.LENGTH_LONG).show();
+                }
+            }).show();
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) offerPilotUpdate();
     }
 
     @Override protected void onResume() {
@@ -108,6 +149,7 @@ public final class MainActivity extends Activity {
             render();
             schedulePoll(0);
         }
+        offerPilotUpdate();
     }
 
     @Override protected void onPause() {

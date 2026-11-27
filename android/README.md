@@ -19,3 +19,8 @@ Dim fixture 5 from 80% to 25% in Pre-Service, then tap **Simulate ProPresenter c
 On Linux or macOS, install a JDK, Android SDK Platform 35, Android SDK Build Tools 35.0.0, and zip. Set `ANDROID_SDK_ROOT` and `ZXING_JAR` to the SDK and [ZXing Core 3.5.3 JAR](https://repo.maven.apache.org/maven2/com/google/zxing/core/3.5.3/core-3.5.3.jar). Run `android/build-pilot.sh` from the repository root. The APK is written to `dist/LifeAC-Lighting-Pilot.apk`.
 
 The pilot uses a test signing key and installs alongside the earlier offline demo. Preserve the generated pilot keystore for updates within the pilot. Arrange church-owned release signing before distributing to volunteers.
+
+
+## Publishing pilot updates
+
+The app checks `pilot-downloads/latest-android.json` on the public `pilot-downloads` branch when launched. Increment `android:versionCode` on every release and build with the existing pilot signing key. Update the manifest's `versionCode` and numeric `version` (for example, `0.2.13`) in the same commit as `LifeLIGHT-Pilot-<version>.apk`. The app opens that APK's download in the browser. Android handles the install prompt and checks the signature against the installed app.
