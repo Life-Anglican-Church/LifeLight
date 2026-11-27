@@ -23,4 +23,6 @@ The pilot uses a test signing key and installs alongside the earlier offline dem
 
 ## Publishing pilot updates
 
-The app checks `pilot-downloads/latest-android.json` on the public `pilot-downloads` branch when launched. Increment `android:versionCode` on every release and build with the existing pilot signing key. Update the manifest's `versionCode` and numeric `version` (for example, `0.2.13`) in the same commit as `LifeLIGHT-Pilot-<version>.apk`. The app opens that APK's download in the browser. Android handles the install prompt and checks the signature against the installed app.
+The app checks `pilot-downloads/latest-android.json` on the public `pilot-downloads` branch when launched. Increment `android:versionCode` on every release and sign with the existing pilot signing key. Publish the APK and manifest in the same commit. The manifest contains the APK's integer `versionCode`, numeric `version` (for example, `0.2.14`), and lowercase `sha256` of the signed APK. Name the file `LifeLIGHT-Pilot-<version>.apk`.
+
+From 0.2.14, **Update now** downloads into private cache and checks the SHA-256, Android package ID, version code and signing certificates before opening Android's installer. Android may first ask the user to allow installations from LifeLIGHT. The user confirms the update in Android. Existing pairings and preferences carry over on an in-place install. Version 0.2.13 can still offer 0.2.14 through its browser-download flow.

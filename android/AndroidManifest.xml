@@ -1,12 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.lifeac.lighting.companion"
-    android:versionCode="14" android:versionName="0.2.13-pilot">
+    android:versionCode="15" android:versionName="0.2.14-pilot">
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application android:label="LifeLIGHT" android:icon="@drawable/lifeac_app"
         android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">
+        <provider android:name="org.lifeac.lighting.companion.PilotApkProvider"
+            android:authorities="org.lifeac.lighting.companion.updates"
+            android:exported="false" android:grantUriPermissions="true" />
         <activity android:name="org.lifeac.lighting.companion.PairScanner" android:exported="false" android:screenOrientation="portrait" />
         <activity android:name="org.lifeac.lighting.companion.MainActivity" android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">

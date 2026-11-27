@@ -85,7 +85,12 @@ public final class MainActivity extends Activity {
     private LinearLayout statusCard;
     private Button release, releaseAll;
     private Drawable photo;
-    private PilotUpdate pendingUpdate;
+    private PilotUpdate pendingUpdate, updateAwaitingPermission;
+    private java.io.File verifiedUpdate;
+    private Thread updateWorker;
+    private AlertDialog updateProgress;
+    private static final int UPDATE_PERMISSION_REQUEST = 20;
+    private static final int UPDATE_INSTALL_REQUEST = 21;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -106,6 +111,7 @@ public final class MainActivity extends Activity {
         Thread check = new Thread(() -> {
             try {
                 long version = getPackageManager().getPackageInfo(getPackageName(), 0).getLongVersionCode();
+                PilotUpdate.cleanInstalledUpdates(getApplicationContext(), version);
                 PilotUpdate update = PilotUpdate.check(version);
                 if (update != null) ui.post(() -> {
                     if (isDestroyed() || isFinishing()) return;
@@ -121,19 +127,92 @@ public final class MainActivity extends Activity {
     }
 
     private void offerPilotUpdate() {
-        if (pendingUpdate == null || !resumed || !hasWindowFocus() || isFinishing()) return;
+        if (!resumed || !hasWindowFocus() || isFinishing() || isDestroyed()) return;
+        if (verifiedUpdate != null) {
+            java.io.File verified = verifiedUpdate;
+            verifiedUpdate = null;
+            try {
+                Intent intent = new Intent(Intent.ACTION_INSTALL_PACKAGE)
+                    .setData(PilotApkProvider.uri(this, verified))
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .putExtra(Intent.EXTRA_RETURN_RESULT, true);
+                startActivityForResult(intent, UPDATE_INSTALL_REQUEST);
+            } catch (android.content.ActivityNotFoundException | SecurityException error) {
+                Toast.makeText(this, "Android couldn’t open the update installer.", Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
+        if (pendingUpdate == null) return;
         PilotUpdate update = pendingUpdate;
         pendingUpdate = null;
         dialog().setTitle("LifeLIGHT " + update.version + " is available")
-            .setMessage("Download the APK from GitHub and open it to install the update.")
+            .setMessage("LifeLIGHT will download the update. Android will ask you to confirm installation.")
             .setNegativeButton("Later", null)
-            .setPositiveButton("Download APK", (window, which) -> {
+            .setPositiveButton("Update now", (window, which) -> requestPilotInstall(update))
+            .show();
+    }
+
+    private void requestPilotInstall(PilotUpdate update) {
+        if (getPackageManager().canRequestPackageInstalls()) {
+            startPilotDownload(update);
+            return;
+        }
+        dialog().setTitle("Allow LifeLIGHT updates")
+            .setMessage("In Android Settings, turn on Allow from this source for LifeLIGHT, then come back.")
+            .setNegativeButton("Later", null)
+            .setPositiveButton("Open Settings", (window, which) -> {
                 try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(update.downloadUrl)));
-                } catch (android.content.ActivityNotFoundException error) {
-                    Toast.makeText(this, "Open GitHub in a browser to download the APK.", Toast.LENGTH_LONG).show();
+                    updateAwaitingPermission = update;
+                    startActivityForResult(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        android.net.Uri.parse("package:" + getPackageName())), UPDATE_PERMISSION_REQUEST);
+                } catch (android.content.ActivityNotFoundException | SecurityException error) {
+                    updateAwaitingPermission = null;
+                    Toast.makeText(this, "Android update permission settings are unavailable.", Toast.LENGTH_LONG).show();
                 }
             }).show();
+    }
+
+    private void startPilotDownload(PilotUpdate update) {
+        if (updateWorker != null) return;
+        updateProgress = dialog().setTitle("Downloading LifeLIGHT " + update.version)
+            .setMessage("Downloading and verifying the update…")
+            .setNegativeButton("Cancel", (window, which) -> cancelPilotDownload())
+            .setOnCancelListener(window -> cancelPilotDownload())
+            .show();
+        Thread worker = new Thread(() -> {
+            java.io.File file = null;
+            try {
+                file = update.downloadAndVerify(getApplicationContext());
+            } catch (Exception ignored) {
+                // No update reaches the installer when download or verification fails.
+            }
+            Thread completed = Thread.currentThread();
+            java.io.File result = file;
+            ui.post(() -> {
+                if (updateWorker != completed || isDestroyed() || isFinishing()) return;
+                updateWorker = null;
+                verifiedUpdate = result;
+                if (updateProgress != null) {
+                    updateProgress.dismiss();
+                    updateProgress = null;
+                }
+                if (result == null) {
+                    Toast.makeText(this, "Update couldn’t be downloaded or verified. Try again next time you open LifeLIGHT.",
+                        Toast.LENGTH_LONG).show();
+                } else offerPilotUpdate();
+            });
+        }, "LifeLIGHT update download");
+        updateWorker = worker;
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void cancelPilotDownload() {
+        if (updateWorker != null) {
+            updateWorker.interrupt();
+            updateWorker = null;
+        }
+        updateProgress = null;
     }
 
     @Override public void onWindowFocusChanged(boolean hasFocus) {
@@ -163,6 +242,8 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if (updateProgress != null) updateProgress.dismiss();
+        cancelPilotDownload();
         ui.removeCallbacksAndMessages(null);
         network.shutdownNow();
         super.onDestroy();
@@ -196,6 +277,12 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if (request == UPDATE_PERMISSION_REQUEST) {
+            PilotUpdate update = updateAwaitingPermission;
+            updateAwaitingPermission = null;
+            if (update != null && getPackageManager().canRequestPackageInstalls()) startPilotDownload(update);
+            return;
+        }
         if (request != 11 || result != RESULT_OK || data == null) return;
         EditText name = new EditText(this);
         name.setSingleLine(true);
