@@ -1,3 +1,5 @@
+import {validateFootprint} from '../web/footprints.js';
+import {MobileDevices,mobileChanges,mobileSnapshot} from './mobile.mjs';
 import {ensureLanIdentity} from './lan-identity.mjs';
 import {addressForPeer} from './network.mjs';
 import {FolderFailover} from './failover.mjs';
@@ -5,7 +7,7 @@ import {advertise} from './discovery.mjs';
 import {validateMovement} from '../web/movement.js';
 import fs from 'node:fs';import path from 'node:path';import http from 'node:http';import https from 'node:https';import os from 'node:os';import {spawn} from 'node:child_process';import readline from 'node:readline';import {randomUUID,randomBytes,X509Certificate} from 'node:crypto';import {fileURLToPath} from 'node:url';
 import {Store} from './store.mjs';import {Auth} from './auth.mjs';import {Engine} from './engine.mjs';import {SimTransport,NativeTransport,prepareRuntime} from './transport.mjs';import {importShow,importProfile,suggestAddress,hash} from './import.mjs';
-const ADMIN=new Set(['runtime','simulate','folder','moveScene','reorderScenes','position','removeUser','setPin','previewFrame','preview','adjust','cancelPreview','saveScene','duplicate','deleteScene','addFixtures','updateFixture','deleteFixture','createProfile','importProfile','importShow','restoreBackup','setUser','lan','midiStart','midiStop','midiMap','standalonePlan','takeover','previewHeartbeat','saveOverrides','readStandalone','captureLook','fixtureGroup','serviceMuteFixtures','colourPreset','firewall','reorderFolders','bulkScenes','setMovement','failoverSettings','startup']);
+const ADMIN=new Set(['setFootprint','runtime','simulate','folder','moveScene','reorderScenes','position','removeUser','setPin','previewFrame','preview','adjust','cancelPreview','saveScene','duplicate','deleteScene','addFixtures','updateFixture','deleteFixture','createProfile','importProfile','importShow','restoreBackup','setUser','lan','midiStart','midiStop','midiMap','standalonePlan','takeover','previewHeartbeat','saveOverrides','readStandalone','captureLook','fixtureGroup','serviceMuteFixtures','colourPreset','firewall','reorderFolders','bulkScenes','setMovement','failoverSettings','startup']);
 import {readPlayback,restorePlayback,writePlayback} from './playback.mjs';
 import {saveLook} from './capture.mjs';
 import {Midi,matches} from './midi.mjs';
@@ -14,7 +16,7 @@ import {DiagnosticLog} from './diagnostics.mjs';
 import {validateEffects} from './model.mjs';
 const clone=structuredClone;const DEFAULT_COLOURS=Array(8).fill(null);
 export async function createApp({root=path.resolve(fileURLToPath(new URL('..',import.meta.url))),dataDir=path.join(process.env.LOCALAPPDATA??os.tmpdir(),'LifeAC-Lighting'),transport=null,port=0,testing=false,midiFactory=null,automaticTakeover=!testing,testLan=null}={}){
- const seed=JSON.parse(fs.readFileSync(path.join(root,'inputs','show.json'),'utf8'));const store=new Store(dataDir,seed),auth=new Auth(dataDir);
+ const seed=JSON.parse(fs.readFileSync(path.join(root,'inputs','show.json'),'utf8'));const store=new Store(dataDir,seed),auth=new Auth(dataDir),mobile=new MobileDevices(dataDir);
  let role='primary';const roleFile=path.join(dataDir,'role.json');try{role=JSON.parse(fs.readFileSync(roleFile,'utf8')).role??'primary';}catch{}if(!['primary','backup'].includes(role))throw Error('A Network Controller cannot run a lighting host');let failover=null,failoverError=null;const configFile=path.join(dataDir,'settings.json');let settings=fs.existsSync(configFile)?JSON.parse(fs.readFileSync(configFile,'utf8')):{lanEnabled:true};if(settings.lanModeVersion!==3){settings.lanEnabled=true;settings.lanModeVersion=3;fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});}
  const reference=JSON.parse(fs.readFileSync(path.join(root,'inputs','commissioning-frame.json'),'utf8'));if(reference.values.length!==512||reference.values.some(v=>!Number.isInteger(v)||v<0||v>255))throw Error('Invalid reference frame');
  let driver=transport??new NativeTransport(root);const engine=new Engine(store.show,driver,{reference:reference.values});let lanServer=null,midi=null,lastMidi=null,lease=null,setup='Ready',closing=false;const diagnostic=new DiagnosticLog(dataDir),audit=diagnostic.recent,streams=new Set();let serial=Promise.resolve(),standaloneJob=null,standaloneAbort=null,lastStandalone=null,maintenance=false;try{lastStandalone=JSON.parse(fs.readFileSync(path.join(dataDir,"standalone-read.json")));}catch{}
@@ -42,6 +44,18 @@ export async function createApp({root=path.resolve(fileURLToPath(new URL('..',im
    case 'removeUser':auth.removeUser(c.name);break;
    case 'startup':{if(testing)throw Error('Windows startup changes disabled in tests');if(typeof c.enabled!=='boolean')throw Error('Choose startup on/off');await new Promise((resolve,reject)=>{const child=spawn(path.join(root,'LifeAC Lighting.exe'),[c.enabled?'--startup-enable':'--startup-disable'],{windowsHide:true,stdio:'ignore'});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('Could not change Windows startup')));});break;}
    case 'failoverSettings':{if(typeof c.folder!=='string'||c.folder.length>1000||c.folder&&!path.isAbsolute(c.folder))throw Error('Enter an absolute shared-folder path on this PC');settings.failoverFolder=c.folder.trim();settings.lastSharedHash=null;fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});configureFailover();if(failover)await Promise.race([failover.tick(true),new Promise(r=>setTimeout(r,2000))]);break;}
+   case 'setFootprint':{
+    if(engine.preview)throw Object.assign(Error('Finish editing the live scene before saving a footprint.'),{status:409});
+    if(c.revision!==store.show.revision)throw Object.assign(Error('The show changed in another window. Your footprint draft is still open.'),{status:409});
+    const footprint=c.footprint===null?null:validateFootprint(c.footprint);
+    if(!store.show.fixtures.some(f=>f.id===c.id&&f.universe===1))throw Error('Choose a configured fixture');
+    edit(session);
+    try{updateShow(c.revision,show=>{
+     const fixture=show.fixtures.find(f=>f.id===c.id);
+     if(footprint)fixture.footprint=footprint;else delete fixture.footprint;
+    });}finally{lease=null;}
+    break;
+   }
    case 'setMovement':{edit(session);validateMovement(c.points);updateShow(c.revision,s=>{const f=s.fixtures.find(f=>f.id===c.id);if(!f)throw Error('Light missing');const p=s.profiles.find(p=>p.id===f.profileId);if(!['pan','tilt'].every(role=>p.channels.some(c=>c.role===role)))throw Error('Fixture has no movement channels');f.movement={points:clone(c.points)};});lease=null;break;}
    case 'bulkScenes':{edit(session);updateShow(c.revision,s=>{if(!Array.isArray(c.ids)||c.ids.length<2||new Set(c.ids).size!==c.ids.length)throw Error('Select at least two scenes');const items=s.scenes.filter(x=>c.ids.includes(x.id));if(items.length!==c.ids.length)throw Error('A selected scene is missing');if(c.action==='move'){if(!s.folders.includes(c.folder))throw Error('Choose a folder');items.forEach(x=>x.page=c.folder);}else if(c.action==='delete'){if(c.ids.includes(engine.sceneId)||engine.preview)throw Error('Select another scene and close live editing before deleting active scenes');s.scenes=s.scenes.filter(x=>!c.ids.includes(x.id));s.midiMappings=s.midiMappings.filter(x=>!c.ids.includes(x.sceneId));s.standalone=s.standalone.filter(x=>!c.ids.includes(x.sceneId));}else if(c.action==='combine'){if(!s.folders.includes(c.folder)||typeof c.name!=='string'||!c.name.trim()||items.some(x=>x.unsupported||x.effects?.length))throw Error('Choose playable scenes without procedural effects');const values=Array(512).fill(0),mask=Array(512).fill(false),steps=[];for(const item of items)for(const step of item.steps){for(let i=0;i<512;i++)if(item.mask[i]){values[i]=step.values[i];mask[i]=true;}steps.push({...clone(step),values:values.slice(),waitMs:Math.max(1000,step.waitMs)});}s.scenes.push({id:randomUUID(),name:c.name.trim().slice(0,160),page:c.folder,fadeMs:items[0].fadeMs,mask,steps,effects:[],loop:true,unsupported:null,source:'LifeAC combined scenes'});}else throw Error('Unknown group action');});lease=null;break;}
    case 'folder':edit(session);updateShow(c.revision,s=>{const name=String(c.name??'').trim();if(!name||name.length>80||s.folders.includes(name))throw Error('Choose a new folder name');if(c.old){if(c.old==='Sunday Services'||!s.folders.includes(c.old))throw Error('Choose a custom folder');s.folders=s.folders.map(x=>x===c.old?name:x);for(const scene of s.scenes)if(scene.page===c.old)scene.page=name;}else s.folders.push(name);});lease=null;break;
@@ -124,7 +138,7 @@ export async function createApp({root=path.resolve(fileURLToPath(new URL('..',im
   let server;try{server=https.createServer({pfx:fs.readFileSync(path.join(dataDir,'lan.pfx')),passphrase:settings.password,minVersion:'TLSv1.2'},handler);await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(settings.port,testing?'127.0.0.1':'0.0.0.0',resolve);});lanServer=server;lanError=null;record('LAN',{status:'listening',address:server.address().address,port:server.address().port,fingerprint:settings.fingerprint});server.on('error',error=>{lanError=error.code??error.message;record('LAN',{status:'listener error',error:lanError});});}
   catch(error){if(server)try{server.close();}catch{}lanServer=null;lanError=error.code??error.message;throw error;}
  }
- async function body(req){let size=0;const chunks=[];for await(const c of req){size+=c.length;if(size>20_000_000)throw Error('Request too large');chunks.push(c);}return JSON.parse(Buffer.concat(chunks).toString()||'{}');}
+ async function body(req,maxSize=20_000_000){let size=0;const chunks=[];for await(const c of req){size+=c.length;if(size>maxSize)throw Error('Request too large');chunks.push(c);}return JSON.parse(Buffer.concat(chunks).toString()||'{}');}
  function json(res,status,data){res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
  function cookie(res,session,secure){res.setHeader('Set-Cookie',`lifeac=${session.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${secure?'; Secure':''}`);}
  async function handler(req,res){
@@ -136,9 +150,49 @@ export async function createApp({root=path.resolve(fileURLToPath(new URL('..',im
    if(url.pathname==='/api/bootstrap'&&req.method==='POST'){const c=await body(req);if(encrypted||req.socket.remoteAddress!=='127.0.0.1'||c.token!==auth.bootstrap)throw Object.assign(Error('Open the app using its Windows launcher'),{status:403});const session=auth.session('This PC','admin');cookie(res,session,false);return json(res,200,state(session));}
    if(url.pathname==='/api/hello'&&req.method==='GET')return json(res,200,{service:'lifeac-lighting',name:os.hostname(),version:'0.8.2'});
    if(url.pathname==='/api/login'&&req.method==='POST'){const c=await body(req);const session=auth.login(c.name,c.password,req.socket.remoteAddress);cookie(res,session,encrypted);return json(res,200,state(session));}
+   if(url.pathname.startsWith('/api/mobile/')){
+    if(!encrypted||role!=='primary')return json(res,403,{error:'Android control requires the primary HTTPS host'});
+    if(url.pathname==='/api/mobile/pair'&&req.method==='POST'){
+     const c=await body(req,16000);const device=mobile.pair(c.code,c.name);
+     record('mobilePair',{deviceId:device.id,device:device.name});return json(res,200,device);
+    }
+    const header=req.headers.authorization;
+    if(url.pathname==='/api/mobile/state'&&req.method==='GET'){mobile.authenticate(header);return json(res,200,mobileSnapshot(store.show,engine));}
+    if(url.pathname==='/api/mobile/command'&&req.method==='POST'){
+     mobile.authenticate(header);
+     const c=await body(req,16000);
+     const result=serial.then(async()=>{
+      const device=mobile.authenticate(header);
+      if(!['active','simulation'].includes(engine.output)||engine.preview||maintenance)throw Object.assign(Error('Lighting controls are unavailable at the desk'),{status:409});
+      if(c.revision!==store.show.revision)throw Object.assign(Error('Show changed. Refresh and try again.'),{status:409});
+      const op=c.op==='cue'?{op:'play',sceneId:c.sceneId}:['adjust','colour','release'].includes(c.op)?mobileChanges(store.show,engine,c):null;
+      if(!op)return null;
+      if(c.op==='release'&&engine.dark)throw Object.assign(Error('Output is dark. Release at the desk.'),{status:409});
+      await command(op,{name:device.name,role:'operator'});
+      record('mobileCommand',{deviceId:device.id,device:device.name,action:c.op,sceneId:c.sceneId,fixtureIds:c.ids});
+      return mobileSnapshot(store.show,engine);
+     });
+     serial=result.catch(()=>{});
+     const snapshot=await result;
+     return snapshot?json(res,200,snapshot):json(res,403,{error:'Action unavailable on mobile'});
+    }
+    return json(res,404,{error:'Not found'});
+   }
    const session=auth.get(req.headers.cookie);
    if(url.pathname.startsWith('/api/')){
     if(!session)return json(res,401,{error:'Sign in to control lighting'});
+    if(url.pathname==='/api/paired-devices'){
+     if(encrypted||role!=='primary'||session.role!=='admin')return json(res,403,{error:'Unlock administrator controls at the primary desk'});
+     if(req.method==='GET')return json(res,200,mobile.list());
+     if(req.method==='POST'){
+      if(req.headers['x-csrf']!==session.csrf)return json(res,403,{error:'Session check failed. Refresh.'});
+      const c=await body(req);
+      if(auth.get(req.headers.cookie)!==session||session.role!=='admin')return json(res,403,{error:'Unlock administrator controls at the primary desk'});
+      if(c.action==='issue')return json(res,200,mobile.issue(settingsPublic().url,settings.fingerprint??(lanServer&&new X509Certificate(fs.readFileSync(path.join(dataDir,'lan.pfx.cer'))).fingerprint256)));
+      if(c.action==='remove'){mobile.remove(c.id);record('mobileRemove',{deviceId:c.id});return json(res,200,mobile.list());}
+     }
+     return json(res,405,{error:'Not allowed'});
+    }
     if(url.pathname==='/api/state')return json(res,200,state(session));
     if(url.pathname==='/api/events'){res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-store','Connection':'keep-alive'});const s={res,session,revision:store.show.revision,clientId:String(url.searchParams.get('clientId')??'default').slice(0,100)};streams.add(s);res.write(`data: ${JSON.stringify(state({...session,clientId:s.clientId}))}\n\n`);res.on('close',()=>streams.delete(s));return;}
     if(url.pathname==='/api/command'&&req.method==='POST'){if(req.headers['x-csrf']!==session.csrf)throw Object.assign(Error('Session check failed. Refresh.'),{status:403});const c=await body(req);const result=serial.then(()=>command(c,{...session,clientId:c.clientId}));serial=result.catch(()=>{});return json(res,200,await result);}

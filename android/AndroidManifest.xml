@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.lifeac.lighting.companion"
+    android:versionCode="13" android:versionName="0.2.12-pilot">
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <application android:label="LifeLIGHT" android:icon="@drawable/lifeac_app"
+        android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">
+        <activity android:name="org.lifeac.lighting.companion.PairScanner" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name="org.lifeac.lighting.companion.MainActivity" android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

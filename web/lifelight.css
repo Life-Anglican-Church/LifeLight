@@ -1,0 +1,104 @@
+:root:not([data-theme=light]) {
+  --paper:#101013; --surface:#1b1a20; --raised:#282530;
+  --ink:#f7f3fa; --muted:#beb4c7; --line:#39343e;
+  --navy:#7855a0; --deep:#523a70; --teal:#c6a5f2; --mint:#e2c9ff;
+  --accent:#c6a5f2; --panel:#1b1a20; --panel-top:#211e28;
+  --rail:#141317; --cyan:#d0b3f5;
+}
+header, .desk-footer {
+  background:#17161c;
+  box-shadow:none;
+  border-color:#ffffff12;
+}
+header .status-icons > *, header .header-action:not(.danger) {
+  box-shadow:none;
+  border-color:transparent !important;
+}
+header .header-action:not(.danger) { background:var(--raised)!important; color:var(--ink)!important; }
+.app-rail {background:var(--paper);border-right-color:#ffffff0e;}
+.app-rail button {border-color:transparent;box-shadow:none;}
+.app-rail button:is(.active,.selected,[aria-current="page"]) {
+  background:#2b2238; color:#e2c9ff; border-color:transparent;
+}
+.dashboard :is(.scene-column,.dashboard-stage,#light-controls-panel) {
+  background:var(--surface);border-color:transparent;box-shadow:none;border-radius:8px;
+}
+#folder {background:var(--raised);border-color:transparent;}
+.dashboard button:not(.fixture-pin,.scene-play,:focus-visible), .desk-footer button:not(#release-dark,:focus-visible) {
+  border-color:transparent; box-shadow:none;
+}
+.dashboard button:is(.selected,.primary,[aria-selected="true"]):not(.fixture-pin,.scene-play) {
+  color:#ead8ff; background:#342745; border-color:transparent; box-shadow:none;
+}
+.dashboard .inspector-tabs {border:0;background:#151419;border-radius:6px;}
+.dashboard .inspector-tabs button {border-radius:6px;}
+.dashboard :is(.stage-header,.stage-toolbar,.group-bar,.fixture-groups,.inspector-head,.control-head) {border-color:#ffffff12;}
+.dashboard .scene {
+  border-color:transparent; border-radius:6px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--scene-accent) 64%,#28212d),color-mix(in srgb,var(--scene-accent) 25%,#18141e) 74%);
+  box-shadow:none;
+}
+.dashboard .scene.playing {
+  outline:2px solid color-mix(in srgb,var(--scene-accent) 76%,white);
+  border-color:transparent; outline-offset:0;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--scene-accent) 78%,#28212d),color-mix(in srgb,var(--scene-accent) 35%,#18141e) 72%);
+  box-shadow:none;
+}
+.dashboard .scene.playing::after {
+  content:"LIVE"; background:color-mix(in srgb,var(--scene-accent) 75%,white); color:#19121f;
+}
+.dashboard .scene-symbol {color:color-mix(in srgb,var(--scene-accent) 32%,white);}
+.dashboard .scene-play small {color:#e0d8e6;}
+.dashboard .fixture-pin.selected {
+  outline:2px solid #fff;
+  outline-offset:2px;
+  border-color:#111;
+  box-shadow:0 0 0 6px #101014;
+}
+.desk-footer section {border-color:#ffffff1b;}
+input[type="range"] {accent-color:#c6a5f2;}
+#master, .dimmer-fader input[type="range"] {accent-color:#c6a5f2;}
+.desk-footer #release-dark {background:#441f2b;border-color:#a14c60;color:#ffd4dd;box-shadow:none;}
+
+
+header .top {background:transparent}
+header {
+ background:radial-gradient(ellipse 480px 170px at 0% 108%,#08768a53,transparent 78%),
+ radial-gradient(ellipse 590px 155px at 34% -55%,#70279165,transparent 80%),#14131a;
+}
+header .top > .lifelight-wordmark {width:clamp(130px,12vw,184px);height:57px;max-height:none;object-fit:contain;flex:none;margin-right:10px}
+header .status-icons .connection-card{background:#ffffff08}
+header #theme{color:#ead8ff}
+.dashboard .scene:not(.playing){border:0}
+.dashboard .fixture-pin.selected{z-index:2}
+#stage-photo{isolation:isolate}
+#stage-footprints,.footprint-editor-photo canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+#stage-footprints[hidden]{display:none}
+#toggle-footprints{margin-left:auto;white-space:nowrap}
+.footprint-editor{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(220px,1fr);gap:18px}
+.footprint-editor-photo{position:relative;isolation:isolate;touch-action:none;cursor:crosshair}
+.footprint-editor-photo img{display:block;width:100%;height:auto;user-select:none;pointer-events:none}
+.footprint-editor label{display:block;margin-bottom:7px}
+.footprint-editor input[type=range]{display:block;width:100%;margin:2px 0 0}
+.footprint-editor output{float:right;color:var(--muted)}
+.lifelight-splash {
+ display:grid;place-items:center;position:fixed;inset:0;z-index:20;
+ background:radial-gradient(ellipse at left bottom,#0a7188,transparent 58%),
+ radial-gradient(ellipse at right top,#582080,transparent 58%),#080d1b;color:white;text-align:center;
+}
+.lifelight-splash[hidden]{display:none}
+.lifelight-splash img{width:min(46vw,440px);height:auto}
+.lifelight-splash p{margin:18px 0 0}
+.connection-screen{background:radial-gradient(ellipse at left bottom,#0a7188,transparent 58%),
+ radial-gradient(ellipse at right top,#582080,transparent 58%),#080d1b;overflow:auto}
+.connection-screen .top{background:transparent}
+.connection-screen .connection-panel{background:#151321;border:0}
+.connection-wordmark{display:block;width:min(100%,300px);height:auto;margin:0 auto 18px}
+@media(prefers-reduced-motion:no-preference){body.console-ready .dashboard{animation:console-entry .16s ease-out both}}
+@keyframes console-entry{from{opacity:.35}to{opacity:1}}
+:root[data-theme=light] header .top>.lifelight-wordmark{background:#14131a;border-radius:7px}
+:root[data-theme=light] .dashboard .scene,
+:root[data-theme=light] .dashboard .scene.playing{background:linear-gradient(150deg,color-mix(in srgb,var(--scene-accent) 55%,#fff7ed),color-mix(in srgb,var(--scene-accent) 15%,#fff7ed))}
+:root[data-theme=light] .dashboard .scene-play small{color:#4c4056}
+:root[data-theme=light] .dashboard .scene-symbol{color:#473454}
+:root[data-theme=light] .dashboard .inspector-tabs,:root[data-theme=light] .desk-footer{background:#f0eaf4;color:#26202c}

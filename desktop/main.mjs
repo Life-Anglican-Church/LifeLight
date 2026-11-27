@@ -6,10 +6,10 @@ function open(){if(window&&!window.isDestroyed()){if(window.isMinimized())window
 async function stop(){if(quitting)return;quitting=true;clearInterval(parentTimer);control?.close();window?.destroy();try{// The independent host owns USB/MIDI and survives the client.
 }finally{if(blocker!=null)powerSaveBlocker.stop(blocker);app.quit();}}
 async function start(){nativeTheme.themeSource='dark';
- window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'LifeAC Lighting',icon:path.join(root,'web/assets/lifeac.ico'),backgroundColor:'#10151c',autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(root,'desktop/preload.cjs'),backgroundThrottling:false}});
+ window=new BrowserWindow({width:1440,height:960,minWidth:900,minHeight:650,title:'LifeLIGHT',icon:path.join(root,'web/assets/lifelight-icon.png'),backgroundColor:'#10151c',autoHideMenuBar:true,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(root,'desktop/preload.cjs'),backgroundThrottling:false}});
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));session.defaultSession.setPermissionRequestHandler((_wc,_p,callback)=>callback(false));
  window.on('close',event=>{if(!quitting){event.preventDefault();if(process.env.LIFEAC_CLIENT_ROLE==='controller')stop();else window.hide();}});
- window.setTitle('LifeAC Lighting — opening…');
+ window.setTitle('LifeLIGHT — opening…');
  const endpoint=process.env.LIFEAC_HOST_URL;if(!endpoint)throw Error('Open LifeAC Lighting using its Windows launcher.');if(endpoint!=='auto'){const target=new URL(endpoint);if(!['http:','https:'].includes(target.protocol)||target.protocol==='http:'&&target.hostname!=='127.0.0.1')throw Error('Use HTTPS for a remote lighting host');host={url:target.origin+'/',bootstrap:target.hash.slice(1)};}else host={url:'auto'};
   const connection=makeConnection({window,endpoint,dataDir:process.env.LIFEAC_DATA_DIR});await connection.connect();console.log('READY '+JSON.stringify({url:host.url}));
 }
